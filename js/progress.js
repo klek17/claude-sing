@@ -17,7 +17,9 @@
         lessonsRead: {},             // { lessonId: true }
         achievements: {},            // { badgeId: unlockDate }
         gameBest: 0,                 // best Pitch Flyer score
-        recordingCount: 0            // total recordings ever saved
+        recordingCount: 0,           // total recordings ever saved
+        bestHissSec: 0,              // longest steady breath (seconds)
+        songs: {}                    // { songId: { offset, best, takes: [...] } }
       };
     }
 
@@ -70,6 +72,29 @@
       unlockAchievements: function (ids, now) {
         var d = load();
         ids.forEach(function (id) { d.achievements[id] = todayStr(now); });
+        return save(d);
+      },
+      setBestHiss: function (sec) {
+        var d = load();
+        if (sec > d.bestHissSec) d.bestHissSec = sec;
+        return save(d);
+      },
+      song: function (songId) {
+        var d = load();
+        return d.songs[songId] || { offset: null, best: 0, takes: [] };
+      },
+      setSongOffset: function (songId, offset) {
+        var d = load();
+        var s = d.songs[songId] || (d.songs[songId] = { offset: null, best: 0, takes: [] });
+        s.offset = offset;
+        return save(d);
+      },
+      addSongTake: function (songId, readiness, now) {
+        var d = load();
+        var s = d.songs[songId] || (d.songs[songId] = { offset: null, best: 0, takes: [] });
+        s.takes.push({ date: todayStr(now), readiness: readiness });
+        if (s.takes.length > 100) s.takes = s.takes.slice(-100);
+        if (readiness > s.best) s.best = readiness;
         return save(d);
       },
       markLessonRead: function (lessonId) {

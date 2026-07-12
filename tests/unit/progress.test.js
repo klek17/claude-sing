@@ -106,6 +106,30 @@ test('recording counter and achievement unlocks persist', () => {
   assert.strictEqual(a['first-take'], '2026-07-12');
 });
 
+test('song takes, offset, and breath best persist', () => {
+  const store = Progress.makeStore(fakeStorage());
+  assert.deepStrictEqual(store.song('breakeven'), { offset: null, best: 0, takes: [] });
+  store.setSongOffset('breakeven', -2);
+  store.addSongTake('breakeven', 55, NOW);
+  store.addSongTake('breakeven', 72, NOW);
+  store.addSongTake('breakeven', 60, NOW);
+  const s = store.song('breakeven');
+  assert.strictEqual(s.offset, -2);
+  assert.strictEqual(s.best, 72);
+  assert.strictEqual(s.takes.length, 3);
+  assert.strictEqual(s.takes[1].readiness, 72);
+
+  store.setBestHiss(12.5);
+  store.setBestHiss(9);
+  assert.strictEqual(store.load().bestHissSec, 12.5);
+});
+
+test('song takes are capped at 100', () => {
+  const store = Progress.makeStore(fakeStorage());
+  for (let i = 0; i < 110; i++) store.addSongTake('breakeven', 50, NOW);
+  assert.strictEqual(store.song('breakeven').takes.length, 100);
+});
+
 test('lessons read + reset', () => {
   const store = Progress.makeStore(fakeStorage());
   store.markLessonRead('posture');

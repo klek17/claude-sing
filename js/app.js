@@ -94,6 +94,7 @@
     if (name === 'train') renderCatalog();
     if (name === 'range') renderRangeIntro();
     if (name === 'game') renderGameIntro();
+    if (name === 'song') renderSong();
     if (name !== 'game' && game) game.stop(); // don't run the game loop off-screen
   }
 
@@ -250,9 +251,12 @@
     rangeNote.style.display = hasRange ? 'none' : 'block';
   }
 
-  async function startExercise(id) {
+  // Accepts a catalog id or a ready-made exercise object (song drills).
+  async function startExercise(idOrExercise) {
     if (!(await ensureMic())) return;
-    var exercise = Exercises.forId(id, userRange());
+    var exercise = typeof idOrExercise === 'string'
+      ? Exercises.forId(idOrExercise, userRange())
+      : idOrExercise;
     $('#exercise-list').style.display = 'none';
     $('#train-range-note').style.display = 'none';
     var runner = $('#exercise-runner');
@@ -337,7 +341,7 @@
         '<div class="row"><button class="btn primary" id="run-again">Sing it again</button>' +
         '<button class="btn ghost" id="run-back">Back to exercises</button></div>';
       $('#exercise-runner').appendChild(summary);
-      $('#run-again').addEventListener('click', function () { startExercise(id); });
+      $('#run-again').addEventListener('click', function () { startExercise(idOrExercise); });
       $('#run-back').addEventListener('click', endExerciseUi);
     };
 
@@ -492,6 +496,218 @@
         '<div class="badge-desc">' + b.desc + (unlocked ? ' · ' + have[b.id] : '') + '</div>';
       grid.appendChild(node);
     });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Song trainer (Breakeven)                                          */
+  /* ---------------------------------------------------------------- */
+
+  var SONG = Songs.BREAKEVEN;
+
+  function songOffset() {
+    var saved = store.song(SONG.id).offset;
+    if (saved !== null && saved !== undefined) return saved;
+    return Songs.recommendOffset(SONG.range, userRange()).offset;
+  }
+
+  function renderSong() {
+    renderSongProfile();
+    renderSongGuide();
+    renderTakeHistory();
+    renderBreathBest();
+  }
+
+  function renderSongProfile() {
+    var offset = songOffset();
+    var rec = Songs.recommendOffset(SONG.range, userRange());
+    var r = userRange();
+    var hasRange = !!store.load().range;
+    var lo = SONG.range.low + offset, hi = SONG.range.high + offset;
+    var html =
+      '<h3 class="card-title">🎤 ' + SONG.title + ' — ' + SONG.artist + '</h3>' +
+      '<p class="muted">Original key ≈ ' + Songs.practiceKeyName(SONG, 0) + ' · tempo ≈ ' + SONG.tempo +
+      ' BPM · needs roughly ' + Pitch.midiToNoteName(SONG.range.low) + '–' + Pitch.midiToNoteName(SONG.range.high) +
+      ' (all approximate).</p>' +
+      '<p style="margin-top:8px;">Practice key: <strong>' + Songs.practiceKeyName(SONG, offset) + '</strong>' +
+      (offset !== 0 ? ' (' + (offset > 0 ? '+' : '') + offset + ' semitones)' : ' (original)') +
+      ' → you’ll need <strong>' + Pitch.midiToNoteName(lo) + '–' + Pitch.midiToNoteName(hi) + '</strong>. ' +
+      (hasRange
+        ? 'Your range: <strong>' + Pitch.midiToNoteName(r.low) + '–' + Pitch.midiToNoteName(r.high) + '</strong>. ' +
+          (rec.fits
+            ? (hi <= r.high - 1 && lo >= r.low ? '✅ Fits your voice.' : '⚠️ Current key strains your range — press Reset for the recommended key.')
+            : '⚠️ The full song spans more than your measured range — the key below protects the chorus; sing the lowest verse notes an octave up, and re-test your range as it grows.')
+        : '💡 Do the 30-second test in the Range tab so this can be tuned to your voice.') +
+      '</p>' +
+      '<div class="row">' +
+      '<button class="btn ghost small" id="song-key-down">♭ Lower key</button>' +
+      '<button class="btn ghost small" id="song-key-reset">Reset to recommended</button>' +
+      '<button class="btn ghost small" id="song-key-up">♯ Raise key</button>' +
+      '</div>' +
+      '<p class="muted" style="margin-top:10px;">What this song demands: ' + SONG.demands.join(' · ') + '.</p>';
+    var card = $('#song-profile');
+    card.innerHTML = html;
+    $('#song-key-down').addEventListener('click', function () { store.setSongOffset(SONG.id, Math.max(-12, songOffset() - 1)); renderSongProfile(); });
+    $('#song-key-up').addEventListener('click', function () { store.setSongOffset(SONG.id, Math.min(12, songOffset() + 1)); renderSongProfile(); });
+    $('#song-key-reset').addEventListener('click', function () { store.setSongOffset(SONG.id, Songs.recommendOffset(SONG.range, userRange()).offset); renderSongProfile(); });
+  }
+
+  function renderSongGuide() {
+    $('#song-guide').innerHTML = SONG.guide.map(function (g) {
+      return '<p style="margin-bottom:10px;"><strong>' + g.title + '.</strong> <span class="muted">' + g.text + '</span></p>';
+    }).join('');
+  }
+
+  $('#drill-sustains').addEventListener('click', function () {
+    switchTab('train');
+    startExercise(Songs.topNoteSustains(SONG, songOffset(), userRange()));
+  });
+  $('#drill-leaps').addEventListener('click', function () {
+    switchTab('train');
+    startExercise(Songs.chorusLeaps(SONG, songOffset(), userRange()));
+  });
+
+  /* --- Breath trainer --- */
+
+  var breathRunning = false;
+
+  function renderBreathBest() {
+    if (breathRunning) return;
+    var best = store.load().bestHissSec || 0;
+    $('#breath-live').textContent = best > 0 ? 'best: ' + best.toFixed(1) + 's' : 'best: —';
+  }
+
+  $('#breath-start').addEventListener('click', async function () {
+    if (breathRunning || !(await ensureMic())) return;
+    breathRunning = true;
+    var btn = $('#breath-start');
+    btn.disabled = true;
+    var live = $('#breath-live');
+    for (var c = 3; c >= 1; c--) {
+      live.textContent = 'Breathe in… ' + c;
+      await new Promise(function (res) { setTimeout(res, 800); });
+    }
+    live.textContent = 'Go — steady "sss"!';
+
+    var longest = 0, current = 0, lastLoud = 0, started = false;
+    var t0 = performance.now();
+    var unsub = mic.onReading(function (r) {
+      var now = performance.now();
+      var loud = r.rms > 0.01;
+      if (loud) {
+        if (!started) { started = true; current = 0; }
+        else if (now - lastLoud < 400) current += now - lastLoud;
+        lastLoud = now;
+        if (current > longest) longest = current;
+        live.textContent = (current / 1000).toFixed(1) + 's — keep it even!';
+      }
+      // End: 35s cap, or 1.5s of silence after having started.
+      var done = now - t0 > 35000 || (started && now - lastLoud > 1500);
+      if (done) {
+        unsub();
+        breathRunning = false;
+        btn.disabled = false;
+        var sec = longest / 1000;
+        if (sec > 0.5) {
+          store.setBestHiss(Math.round(sec * 10) / 10);
+          var best = store.load().bestHissSec;
+          live.textContent = sec.toFixed(1) + 's! ' + (sec >= 20 ? '🌬️ Singer-grade lungs!' : 'Best: ' + best.toFixed(1) + 's — beat it tomorrow.');
+          checkAchievements();
+        } else {
+          live.textContent = 'We didn’t hear a steady sound — closer to the mic and try again.';
+        }
+      }
+    });
+  });
+
+  /* --- Sing-along take analyser --- */
+
+  var takeRecorder = null;
+  var takeMidis = null;
+  var takeUnsub = null;
+  var takeTimerInterval = 0;
+
+  $('#take-toggle').addEventListener('click', async function () {
+    var btn = $('#take-toggle');
+    if (takeRecorder) {
+      // stop + analyse
+      clearInterval(takeTimerInterval);
+      if (takeUnsub) { takeUnsub(); takeUnsub = null; }
+      var result = null;
+      try { result = await takeRecorder.stop(); }
+      catch (err) { showToast('Recording failed: ' + (err.message || err), true); }
+      takeRecorder = null;
+      btn.textContent = '⏺ Record a take';
+      btn.classList.remove('recording');
+      $('#take-timer').textContent = '';
+
+      var analysis = Songs.analyzeTake(takeMidis, SONG, songOffset());
+      renderTakeResult(analysis);
+      if (analysis) {
+        store.addSongTake(SONG.id, analysis.readiness);
+        if (result) {
+          try {
+            await RecordingStore.save({
+              name: SONG.title + ' take ' + new Date().toLocaleString(),
+              blob: result.blob, durationMs: result.durationMs,
+              mimeType: result.mimeType, createdAt: Date.now()
+            });
+            store.incrRecordings();
+          } catch (e) { /* keep the analysis even if saving audio fails */ }
+        }
+        if (analysis.readiness >= 80) celebrate();
+        checkAchievements();
+        renderTakeHistory();
+      }
+    } else {
+      if (!(await ensureMic())) return;
+      try { takeRecorder = new Recorder(mic.stream); }
+      catch (err) { showToast(err.message, true); return; }
+      takeMidis = [];
+      takeUnsub = mic.onReading(function (r) { if (r.voiced) takeMidis.push(r.midi); });
+      takeRecorder.start();
+      btn.textContent = '⏹ Stop & analyse';
+      btn.classList.add('recording');
+      $('#take-result').innerHTML = '';
+      var t0 = Date.now();
+      takeTimerInterval = setInterval(function () {
+        $('#take-timer').textContent = fmtTime(Date.now() - t0) + ' — sing along with the track!';
+      }, 250);
+    }
+  });
+
+  function meterRow(label, pct, hint) {
+    return '<div class="take-meter"><span class="tm-label">' + label + '</span>' +
+      '<div class="tm-bar"><div class="tm-fill" style="width:' + Math.round(pct * 100) + '%"></div></div>' +
+      '<span class="tm-val">' + Math.round(pct * 100) + '%</span></div>' +
+      (hint ? '<div class="tm-hint">' + hint + '</div>' : '');
+  }
+
+  function renderTakeResult(a) {
+    var box = $('#take-result');
+    if (!a) {
+      box.innerHTML = '<p class="muted" style="margin-top:12px;">' + Songs.takeFeedback(null, SONG, songOffset()) + '</p>';
+      return;
+    }
+    var offset = songOffset();
+    box.innerHTML =
+      '<div class="take-score"><span class="ts-num">' + a.readiness + '</span><span class="ts-lbl">readiness</span></div>' +
+      meterRow('In key', a.inKeyPct) +
+      meterRow('Range coverage', a.coverage,
+        'You sang ' + Pitch.midiToNoteName(a.lowest) + '–' + Pitch.midiToNoteName(a.highest) +
+        (a.hitTop ? ' — top note hit! 🎯' : ' (top note is ' + Pitch.midiToNoteName(SONG.range.high + offset) + ')')) +
+      meterRow('Pitch steadiness', a.stability) +
+      '<p style="margin-top:10px;">' + Songs.takeFeedback(a, SONG, offset) + '</p>' +
+      '<p class="muted">The audio was saved in the Studio tab — listen back!</p>';
+  }
+
+  function renderTakeHistory() {
+    var s = store.song(SONG.id);
+    var box = $('#take-history');
+    if (!s.takes.length) { box.innerHTML = ''; return; }
+    var recent = s.takes.slice(-8);
+    box.innerHTML = '<p class="muted" style="margin-top:14px;">Best readiness: <strong>' + s.best +
+      '</strong> · ' + s.takes.length + ' take' + (s.takes.length === 1 ? '' : 's') + ' — recent: ' +
+      recent.map(function (t) { return t.readiness; }).join(', ') + '</p>';
   }
 
   /* ---------------------------------------------------------------- */
@@ -661,6 +877,7 @@
   renderLessons();
   renderCatalog();
   renderRangeIntro();
+  renderSong();
   setMicUi();
   switchTab('learn');
 

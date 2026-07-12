@@ -68,6 +68,17 @@ test('recording badge', () => {
   assert.ok(Achievements.evaluate({ recordingCount: 1 }).includes('first-take'));
 });
 
+test('song badges', () => {
+  const takes = n => ({ songs: { breakeven: { takes: Array.from({ length: n }, () => ({})), best: 0 } } });
+  assert.ok(Achievements.evaluate(takes(1)).includes('song-take'));
+  assert.ok(!Achievements.evaluate(takes(1)).includes('song-grind'));
+  assert.ok(Achievements.evaluate(takes(10)).includes('song-grind'));
+  assert.ok(Achievements.evaluate({ songs: { breakeven: { takes: [{}], best: 80 } } }).includes('song-ready'));
+  assert.ok(!Achievements.evaluate({ songs: { breakeven: { takes: [{}], best: 79 } } }).includes('song-ready'));
+  assert.ok(Achievements.evaluate({ bestHissSec: 20 }).includes('breath-20'));
+  assert.ok(!Achievements.evaluate({ bestHissSec: 19.9 }).includes('breath-20'));
+});
+
 test('newUnlocks excludes already-earned badges', () => {
   const data = {
     sessions: [session('pitch-match', 92, 3)],
