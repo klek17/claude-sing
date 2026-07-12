@@ -8,7 +8,18 @@ performances, and tracks your progress over time.
 **No account, no installs, no data leaves your computer.** Everything (scores,
 vocal range, recordings) is stored privately in your own browser.
 
-## Quick start
+## Use it online
+
+Once this repository's Pages deployment is enabled (merge to `main` — the
+included GitHub Actions workflow does the rest automatically), the app is live
+for free at:
+
+**https://klek17.github.io/claude-sing/**
+
+Open it on any phone, tablet or computer, click **🎤 Enable microphone**, and
+allow microphone access when the browser asks.
+
+## Run it locally
 
 You need [Node.js](https://nodejs.org) (any recent version) — only to serve the
 files locally.
@@ -17,8 +28,11 @@ files locally.
 npm start
 ```
 
-Then open **http://localhost:8080** in Chrome, Edge or Firefox, click
-**🎤 Enable microphone**, and allow microphone access when the browser asks.
+Then open **http://localhost:8080** in Chrome, Edge or Firefox.
+
+No Node? Run `npm run build` once and double-click
+`dist/singcoach-standalone.html` — the entire app in a single file that works
+offline from anywhere (email it to yourself, put it on a USB stick…).
 
 > Tip: use headphones during exercises so the reference notes don't bleed into
 > your microphone.
@@ -31,8 +45,9 @@ Then open **http://localhost:8080** in Chrome, Edge or Firefox, click
 | 🎯 **Tuner** | Real-time pitch display: the note you're singing, how many cents sharp or flat you are, a scrolling pitch trace, and an input level meter. |
 | 🏋️ **Train** | Guided exercises (humming warm-up, pitch matching, five-note scale, interval jumps). Each plays reference notes, listens to you sing them back, and scores every note out of 100 with specific feedback ("you drift slightly flat — more breath support!"). |
 | 📏 **Range** | A 30-second vocal range test. Once measured, every exercise is automatically transposed to sit comfortably in *your* voice. |
+| 🎈 **Game** | *Pitch Flyer* — steer a balloon with your voice (sing higher to float up, lower to sink) and fly through the gaps. Pitch-control training disguised as an arcade game, with a persistent best score. |
 | ⏺ **Studio** | Record yourself, listen back, download or delete takes. Recordings persist across sessions (IndexedDB). |
-| 📈 **Progress** | Practice streak, per-exercise averages and bests, and a 14-day score chart. |
+| 📈 **Progress** | Practice streak, per-exercise averages and bests, a 14-day score chart, and **17 unlockable achievement badges** (with confetti 🎉 when you earn one). |
 
 ## Suggested daily routine (10 minutes)
 
@@ -64,13 +79,17 @@ js/scoring.js       note/exercise scoring (pure, Node-testable)
 js/exercises.js     exercise generators (pure, Node-testable)
 js/progress.js      localStorage progress store (Node-testable)
 js/lessons.js       lesson content
+js/achievements.js  badge definitions + unlock logic (pure, Node-testable)
 js/audio.js         microphone engine + reference tone synth
 js/recorder.js      MediaRecorder wrapper + IndexedDB store
 js/trainer.js       exercise state machine
+js/game.js          Pitch Flyer voice-controlled arcade game
 js/app.js           UI wiring
 tools/serve.js      dependency-free static server
-tests/unit/         42 unit tests (node:test) for all the audio math
-tests/e2e/          27-check browser test driving the real app with a fake mic
+tools/build-single.js  bundles everything into one standalone HTML file
+tests/unit/         55 unit tests (node:test) for all the app logic
+tests/e2e/          36-check browser test driving the real app with a fake mic
+.github/workflows/  auto-deploys to GitHub Pages on every push to main
 ```
 
 Run the tests:

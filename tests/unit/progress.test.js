@@ -85,6 +85,27 @@ test('session history is capped at 500', () => {
   assert.strictEqual(store.load().sessions.length, 500);
 });
 
+test('game best only ever increases', () => {
+  const store = Progress.makeStore(fakeStorage());
+  store.addGameScore(7);
+  assert.strictEqual(store.load().gameBest, 7);
+  store.addGameScore(3);
+  assert.strictEqual(store.load().gameBest, 7);
+  store.addGameScore(12);
+  assert.strictEqual(store.load().gameBest, 12);
+});
+
+test('recording counter and achievement unlocks persist', () => {
+  const store = Progress.makeStore(fakeStorage());
+  store.incrRecordings();
+  store.incrRecordings();
+  assert.strictEqual(store.load().recordingCount, 2);
+  store.unlockAchievements(['first-note', 'first-take'], NOW);
+  const a = store.load().achievements;
+  assert.strictEqual(a['first-note'], '2026-07-12');
+  assert.strictEqual(a['first-take'], '2026-07-12');
+});
+
 test('lessons read + reset', () => {
   const store = Progress.makeStore(fakeStorage());
   store.markLessonRead('posture');

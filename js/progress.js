@@ -14,7 +14,10 @@
       return {
         range: null,                 // { low, high } midi, from the range test
         sessions: [],                // { date: 'YYYY-MM-DD', exerciseId, score, stars }
-        lessonsRead: {}              // { lessonId: true }
+        lessonsRead: {},             // { lessonId: true }
+        achievements: {},            // { badgeId: unlockDate }
+        gameBest: 0,                 // best Pitch Flyer score
+        recordingCount: 0            // total recordings ever saved
       };
     }
 
@@ -52,6 +55,21 @@
         var d = load();
         d.sessions.push({ date: todayStr(now), exerciseId: exerciseId, score: score, stars: stars });
         if (d.sessions.length > 500) d.sessions = d.sessions.slice(-500);
+        return save(d);
+      },
+      addGameScore: function (score) {
+        var d = load();
+        if (score > d.gameBest) d.gameBest = score;
+        return save(d);
+      },
+      incrRecordings: function () {
+        var d = load();
+        d.recordingCount = (d.recordingCount || 0) + 1;
+        return save(d);
+      },
+      unlockAchievements: function (ids, now) {
+        var d = load();
+        ids.forEach(function (id) { d.achievements[id] = todayStr(now); });
         return save(d);
       },
       markLessonRead: function (lessonId) {

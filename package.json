@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "start": "node tools/serve.js",
+    "build": "node tools/build-single.js",
     "test": "node --test \"tests/unit/*.test.js\"",
     "test:e2e": "node tests/e2e/run.js",
     "test:all": "npm test && npm run test:e2e"

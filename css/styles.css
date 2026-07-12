@@ -229,6 +229,21 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
 #prog-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--card-edge); }
 #prog-table td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
+/* Game */
+#game-canvas { width: 100%; height: 380px; display: block; background: linear-gradient(180deg, #101a35 0%, #0c1226 100%); border-radius: 10px; }
+
+/* Achievements */
+.card-title { margin-bottom: 10px; font-size: 1.02rem; }
+#badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.badge { background: var(--bg-soft); border-radius: 10px; padding: 12px 10px; text-align: center; opacity: 0.45; filter: grayscale(0.6); }
+.badge.unlocked { opacity: 1; filter: none; border: 1px solid rgba(94,234,212,0.35); }
+.badge-icon { font-size: 1.7rem; }
+.badge-title { font-weight: 700; font-size: 0.85rem; margin-top: 4px; }
+.badge-desc { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+
+/* Confetti overlay */
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }
+
 /* Toast */
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(80px);

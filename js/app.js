@@ -93,6 +93,8 @@
     if (name === 'studio') renderRecordings();
     if (name === 'train') renderCatalog();
     if (name === 'range') renderRangeIntro();
+    if (name === 'game') renderGameIntro();
+    if (name !== 'game' && game) game.stop(); // don't run the game loop off-screen
   }
 
   $$('.tab-btn').forEach(function (b) {
@@ -322,6 +324,8 @@
 
     trainer.onDone = function (total) {
       store.addSession(exercise.id, total.score, total.stars);
+      checkAchievements();
+      if (total.stars === 3) celebrate();
       var stars = '★★★'.slice(0, total.stars) + '☆☆☆'.slice(0, 3 - total.stars);
       var summary = el('div', 'card run-summary');
       summary.innerHTML = '<div class="stars">' + stars + '</div>' +
@@ -404,10 +408,115 @@
       return;
     }
     store.setRange(lowMidi, highMidi);
+    checkAchievements();
     stage.innerHTML = '<p class="range-prompt">✅ Saved! Your range is <strong>' +
       Pitch.midiToNoteName(lowMidi) + ' – ' + Pitch.midiToNoteName(highMidi) +
       '</strong>. Every exercise is now tuned to your voice.</p>';
     renderRangeIntro();
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Achievements + confetti                                           */
+  /* ---------------------------------------------------------------- */
+
+  function celebrate() {
+    var canvas = el('canvas', 'confetti');
+    document.body.appendChild(canvas);
+    var g = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = innerWidth * dpr;
+    canvas.height = innerHeight * dpr;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var colors = ['#5eead4', '#fbbf24', '#f87171', '#a78bfa', '#60a5fa'];
+    var parts = [];
+    for (var i = 0; i < 130; i++) {
+      parts.push({
+        x: innerWidth / 2 + (Math.random() - 0.5) * 160,
+        y: innerHeight * 0.35,
+        vx: (Math.random() - 0.5) * 560,
+        vy: -Math.random() * 480 - 120,
+        s: 5 + Math.random() * 6,
+        c: colors[i % colors.length],
+        rot: Math.random() * Math.PI
+      });
+    }
+    var t0 = performance.now();
+    (function frame(now) {
+      var t = (now - t0) / 1000;
+      if (t > 1.8) { canvas.remove(); return; }
+      var dt = 1 / 60;
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      parts.forEach(function (p) {
+        p.vy += 900 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += dt * 6;
+        g.save();
+        g.translate(p.x, p.y);
+        g.rotate(p.rot);
+        g.globalAlpha = Math.max(0, 1 - t / 1.8);
+        g.fillStyle = p.c;
+        g.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+        g.restore();
+      });
+      requestAnimationFrame(frame);
+    })(t0);
+  }
+
+  // Check for newly earned badges; celebrate and persist them.
+  function checkAchievements() {
+    var data = store.load();
+    data.streak = store.streak();
+    var fresh = Achievements.newUnlocks(data);
+    if (!fresh.length) return fresh;
+    store.unlockAchievements(fresh);
+    celebrate();
+    fresh.forEach(function (id, i) {
+      var b = Achievements.byId(id);
+      setTimeout(function () {
+        showToast('🏅 Achievement unlocked: ' + b.icon + ' ' + b.title + ' — ' + b.desc);
+      }, i * 2200);
+    });
+    return fresh;
+  }
+
+  function renderBadges() {
+    var grid = $('#badge-grid');
+    var have = store.load().achievements || {};
+    grid.innerHTML = '';
+    Achievements.BADGES.forEach(function (b) {
+      var unlocked = !!have[b.id];
+      var node = el('div', 'badge' + (unlocked ? ' unlocked' : ''));
+      node.innerHTML = '<div class="badge-icon">' + (unlocked ? b.icon : '🔒') + '</div>' +
+        '<div class="badge-title">' + b.title + '</div>' +
+        '<div class="badge-desc">' + b.desc + (unlocked ? ' · ' + have[b.id] : '') + '</div>';
+      grid.appendChild(node);
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Game view (Pitch Flyer)                                           */
+  /* ---------------------------------------------------------------- */
+
+  var game = null;
+
+  function renderGameIntro() {
+    var best = store.load().gameBest || 0;
+    $('#game-best-label').textContent = best > 0 ? 'Your best: ' + best : 'Fly through 5 gaps to earn your first badge!';
+  }
+
+  $('#game-play').addEventListener('click', async function () {
+    if (!(await ensureMic())) return;
+    if (!game) game = new PitchFlyer($('#game-canvas'), mic);
+    game.best = store.load().gameBest || 0;
+    game.setZone(Exercises.comfortZone(userRange()));
+    game.onGameOver = function (score) {
+      tones.blip(false);
+      store.addGameScore(score);
+      renderGameIntro();
+      checkAchievements();
+    };
+    game.start();
   });
 
   /* ---------------------------------------------------------------- */
@@ -434,6 +543,8 @@
           mimeType: result.mimeType, createdAt: Date.now()
         });
         showToast('Saved “' + name + '”. Listen back — it is the fastest way to improve!');
+        store.incrRecordings();
+        checkAchievements();
         renderRecordings();
       } catch (err) {
         showToast('Could not save the recording: ' + (err.message || err), true);
@@ -498,6 +609,7 @@
     $('#prog-total').textContent = stats.total;
     var r = stats.range;
     $('#prog-range').textContent = r ? Pitch.midiToNoteName(r.low) + '–' + Pitch.midiToNoteName(r.high) : 'not set';
+    renderBadges();
 
     // per-exercise table
     var tbl = $('#prog-table');
@@ -553,5 +665,9 @@
   switchTab('learn');
 
   // Expose for the automated end-to-end test only.
-  window.__singcoach = { mic: mic, store: store, trainer: trainer };
+  window.__singcoach = {
+    mic: mic, store: store, trainer: trainer,
+    checkAchievements: checkAchievements,
+    getGame: function () { return game; }
+  };
 })();

@@ -1,0 +1,2505 @@
+<title>SingCoach — Learn to Sing</title>
+<style>
+/* SingCoach styles */
+:root {
+  --bg: #0d1220;
+  --bg-soft: #151c30;
+  --card: #1a2340;
+  --card-edge: #26305a;
+  --text: #e8ecfa;
+  --muted: #8b93b8;
+  --accent: #5eead4;
+  --accent-dark: #14b8a6;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: radial-gradient(1200px 600px at 70% -10%, #1b2547 0%, var(--bg) 55%);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 22px 10px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+.logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.tagline { color: var(--muted); font-size: 0.85rem; }
+
+.mic-toggle {
+  border: 1px solid var(--card-edge);
+  background: var(--card);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+.mic-toggle.on { background: var(--accent-dark); border-color: var(--accent-dark); color: #04211c; font-weight: 700; }
+
+nav {
+  display: flex;
+  gap: 6px;
+  padding: 8px 22px;
+  max-width: 980px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+.tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab-btn.active { background: var(--card); color: var(--text); font-weight: 700; }
+
+main { max-width: 980px; margin: 0 auto; padding: 12px 22px 60px; }
+.view { display: none; }
+.view.active { display: block; animation: fade 0.25s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+h2 { font-size: 1.25rem; margin: 14px 0 6px; }
+.view > p.intro { color: var(--muted); margin-bottom: 16px; max-width: 640px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn.primary { background: var(--accent-dark); color: #04211c; }
+.btn.primary:hover { background: var(--accent); }
+.btn.ghost { background: transparent; border: 1px solid var(--card-edge); color: var(--text); }
+.btn.small { padding: 6px 12px; font-size: 0.85rem; }
+.btn.danger { color: var(--bad); border-color: rgba(248,113,113,0.4); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.muted { color: var(--muted); }
+
+/* Lessons */
+.lesson { padding: 0; overflow: hidden; }
+.lesson-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 15px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+}
+.lesson-title { font-weight: 700; }
+.lesson-meta { color: var(--muted); font-size: 0.82rem; }
+.lesson.read .lesson-meta { color: var(--accent); }
+.lesson-body { display: none; padding: 0 18px 16px; color: #c6cdea; line-height: 1.55; }
+.lesson-body p { margin-bottom: 10px; }
+.lesson.open .lesson-body { display: block; }
+.try-it { background: rgba(94,234,212,0.08); border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 6px; }
+
+/* Tuner */
+.tuner-top { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+#tuner-note { font-size: 4rem; font-weight: 800; min-width: 130px; }
+#tuner-freq { color: var(--muted); font-size: 1.05rem; }
+#tuner-cents { font-size: 1.05rem; color: var(--warn); }
+
+#tuner-dial { position: relative; height: 46px; margin: 14px 0 6px; background: var(--bg-soft); border-radius: 10px; overflow: hidden; }
+#tuner-dial::before {
+  content: '';
+  position: absolute; left: 40%; right: 40%; top: 0; bottom: 0;
+  background: rgba(94,234,212,0.12);
+  border-left: 1px solid rgba(94,234,212,0.35);
+  border-right: 1px solid rgba(94,234,212,0.35);
+}
+#tuner-dial::after {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+  background: rgba(255,255,255,0.35);
+}
+#needle {
+  position: absolute; top: 4px; bottom: 4px; width: 6px; border-radius: 3px;
+  left: 50%; transform: translateX(-50%);
+  background: var(--warn);
+  transition: left 0.08s linear, background 0.2s;
+}
+#tuner-dial[data-zone="great"] #needle { background: var(--accent); }
+#tuner-dial[data-zone="good"] #needle { background: var(--warn); }
+#tuner-dial[data-zone="off"] #needle { background: var(--bad); }
+#tuner-dial[data-zone="idle"] #needle { background: rgba(255,255,255,0.25); }
+.dial-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.75rem; padding: 0 4px; }
+
+#tuner-trace { width: 100%; height: 220px; background: var(--bg-soft); border-radius: 10px; margin-top: 14px; display: block; }
+
+.vol-wrap { margin-top: 12px; }
+.vol-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+.vol-meter { height: 10px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; }
+#vol-meter-fill { height: 100%; width: 0; background: var(--accent-dark); border-radius: 999px; transition: width 0.08s linear; }
+#vol-meter-fill.hot { background: var(--bad); }
+
+.mic-hint { display: block; margin-top: 12px; }
+.needs-mic.mic-ready .mic-hint { display: none; }
+
+/* Train */
+.exercise-card .ex-head { display: flex; justify-content: space-between; align-items: center; }
+.ex-title { font-weight: 700; font-size: 1.05rem; }
+.badge { background: rgba(94,234,212,0.12); color: var(--accent); font-size: 0.72rem; padding: 3px 10px; border-radius: 999px; font-weight: 700; }
+.ex-blurb { color: var(--muted); margin: 8px 0 12px; font-size: 0.92rem; }
+.ex-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ex-stats { color: var(--muted); font-size: 0.8rem; }
+
+#exercise-runner { background: var(--card); border: 1px solid var(--card-edge); border-radius: var(--radius); padding: 18px; }
+.run-head { display: flex; justify-content: space-between; align-items: center; }
+.run-desc { color: var(--muted); margin: 6px 0 12px; }
+.run-progress { display: flex; gap: 6px; margin-bottom: 16px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+.dot.done { background: var(--accent-dark); }
+.dot.current { background: var(--warn); transform: scale(1.25); }
+.run-stage { text-align: center; padding: 10px 0 6px; }
+.run-phase { font-size: 1.1rem; color: var(--muted); min-height: 1.5em; }
+.run-note { font-size: 3.4rem; font-weight: 800; line-height: 1.15; }
+.run-label { color: var(--accent); font-weight: 700; min-height: 1.3em; }
+.cents-bar { position: relative; height: 30px; background: var(--bg-soft); border-radius: 999px; margin: 14px auto 6px; max-width: 460px; overflow: hidden; }
+.cents-zone { position: absolute; left: 26%; right: 26%; top: 0; bottom: 0; background: rgba(94,234,212,0.14); border-left: 1px solid rgba(94,234,212,0.4); border-right: 1px solid rgba(94,234,212,0.4); }
+.cents-marker { position: absolute; top: 3px; bottom: 3px; width: 8px; border-radius: 4px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.25); transition: left 0.07s linear; }
+.cents-marker.in-tune { background: var(--accent); }
+.cents-marker.off-tune { background: var(--bad); }
+.cents-marker.silent { background: rgba(255,255,255,0.15); }
+.run-hint { min-height: 1.4em; color: var(--muted); font-size: 0.9rem; }
+.run-results { margin-top: 14px; }
+.note-result { display: grid; grid-template-columns: 52px 44px 1fr; gap: 10px; padding: 7px 10px; border-radius: 8px; margin-bottom: 6px; background: var(--bg-soft); font-size: 0.88rem; align-items: center; }
+.note-result.ok .nr-score { color: var(--accent); }
+.note-result.meh .nr-score { color: var(--warn); }
+.note-result.bad .nr-score { color: var(--bad); }
+.nr-score { font-weight: 800; }
+.nr-fb { color: var(--muted); }
+.run-summary { text-align: center; margin-top: 16px; }
+.stars { font-size: 2rem; color: var(--warn); letter-spacing: 6px; }
+.final-score { font-size: 3rem; font-weight: 800; }
+.final-score span { font-size: 1.2rem; color: var(--muted); font-weight: 400; }
+.run-summary .row { justify-content: center; }
+
+/* Range */
+.range-prompt { font-size: 1.05rem; line-height: 1.5; margin-bottom: 12px; }
+.range-live { font-size: 3.2rem; font-weight: 800; text-align: center; min-height: 1.3em; }
+.range-count { text-align: center; color: var(--warn); min-height: 1.4em; }
+
+/* Studio */
+.rec-controls { display: flex; align-items: center; gap: 16px; }
+#rec-toggle.recording { background: var(--bad); color: #2b0606; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: 0.75; } }
+#rec-timer { font-variant-numeric: tabular-nums; font-size: 1.2rem; color: var(--muted); }
+.rec-card audio { width: 100%; margin: 10px 0 4px; }
+.rec-head { display: flex; justify-content: space-between; gap: 10px; }
+.rec-name { font-weight: 600; font-size: 0.92rem; }
+.rec-dur { color: var(--muted); font-size: 0.85rem; }
+
+/* Progress */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.stat { text-align: center; }
+.stat .num { font-size: 1.9rem; font-weight: 800; color: var(--accent); }
+.stat .lbl { color: var(--muted); font-size: 0.8rem; }
+#prog-chart { width: 100%; height: 160px; display: block; }
+#prog-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+#prog-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--card-edge); }
+#prog-table td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+/* Game */
+#game-canvas { width: 100%; height: 380px; display: block; background: linear-gradient(180deg, #101a35 0%, #0c1226 100%); border-radius: 10px; }
+
+/* Achievements */
+.card-title { margin-bottom: 10px; font-size: 1.02rem; }
+#badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.badge { background: var(--bg-soft); border-radius: 10px; padding: 12px 10px; text-align: center; opacity: 0.45; filter: grayscale(0.6); }
+.badge.unlocked { opacity: 1; filter: none; border: 1px solid rgba(94,234,212,0.35); }
+.badge-icon { font-size: 1.7rem; }
+.badge-title { font-weight: 700; font-size: 0.85rem; margin-top: 4px; }
+.badge-desc { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+
+/* Confetti overlay */
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(80px);
+  background: var(--card); border: 1px solid var(--card-edge); color: var(--text);
+  padding: 12px 20px; border-radius: 12px; max-width: 90vw; width: max-content;
+  transition: transform 0.25s ease; z-index: 50; box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: rgba(248,113,113,0.6); }
+
+@media (max-width: 560px) {
+  #tuner-note { font-size: 2.8rem; }
+  .run-note { font-size: 2.6rem; }
+  header { padding: 14px 16px 6px; }
+  main, nav { padding-left: 16px; padding-right: 16px; }
+}
+
+</style>
+  <text y='0.9em' font-size='90'>🎤</text></svg>">
+
+  <header>
+    <div>
+      <div class="logo">Sing<span>Coach</span></div>
+      <div class="tagline">Your personal singing trainer — mic on, voice out.</div>
+    </div>
+    <button class="mic-toggle">🎤 Enable microphone</button>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" data-tab="learn">📖 Learn</button>
+    <button class="tab-btn" data-tab="tuner">🎯 Tuner</button>
+    <button class="tab-btn" data-tab="train">🏋️ Train</button>
+    <button class="tab-btn" data-tab="range">📏 Range</button>
+    <button class="tab-btn" data-tab="game">🎈 Game</button>
+    <button class="tab-btn" data-tab="studio">⏺ Studio</button>
+    <button class="tab-btn" data-tab="progress">📈 Progress</button>
+  </nav>
+
+  <main>
+    <!-- LEARN -->
+    <section class="view active" id="view-learn">
+      <h2>Start here: singing basics</h2>
+      <p class="intro">Seven short lessons that cover everything a beginner needs. Read one, do its
+        “try it” task, then head to the Train tab to put it into practice.</p>
+      <div id="lesson-list"></div>
+    </section>
+
+    <!-- TUNER -->
+    <section class="view needs-mic" id="view-tuner">
+      <h2>Live tuner</h2>
+      <p class="intro">Sing or hum any note. The tuner names it, shows how sharp or flat you are,
+        and draws your pitch over time. Try holding the needle inside the green zone.</p>
+      <div class="card">
+        <div class="tuner-top">
+          <div id="tuner-note">♪</div>
+          <div>
+            <div id="tuner-freq">microphone off</div>
+            <div id="tuner-cents"></div>
+          </div>
+        </div>
+        <div id="tuner-dial" data-zone="idle"><div id="needle"></div></div>
+        <div class="dial-labels"><span>♭ flat (low)</span><span>in tune</span><span>sharp (high) ♯</span></div>
+        <canvas id="tuner-trace"></canvas>
+        <div class="vol-wrap">
+          <div class="vol-label">Input level — should move clearly when you sing, without going red</div>
+          <div class="vol-meter"><div id="vol-meter-fill"></div></div>
+        </div>
+        <button class="btn primary mic-toggle mic-hint">🎤 Enable microphone</button>
+      </div>
+    </section>
+
+    <!-- TRAIN -->
+    <section class="view" id="view-train">
+      <h2>Guided exercises</h2>
+      <p class="intro">Each exercise plays reference notes and listens to you sing them back,
+        scoring every note out of 100. Start with the warm-up.</p>
+      <p class="card" id="train-range-note" style="border-color: rgba(251,191,36,0.4);">💡 Tip: do the
+        30-second test in the <strong>Range</strong> tab first, so exercises match your voice exactly.</p>
+      <div id="exercise-list"></div>
+      <div id="exercise-runner" style="display:none;"></div>
+    </section>
+
+    <!-- RANGE -->
+    <section class="view" id="view-range">
+      <h2>Vocal range test</h2>
+      <p class="intro">Sing your lowest comfortable note, then your highest. SingCoach uses the result
+        to personalise every exercise to your voice.</p>
+      <div class="card">
+        <p id="range-current"></p>
+        <div id="range-stage"></div>
+        <div class="row"><button class="btn primary" id="range-start">Start range test</button></div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section class="view" id="view-game">
+      <h2>Pitch Flyer 🎈</h2>
+      <p class="intro">Steer the balloon with your voice — sing higher to float up, lower to sink,
+        and fly through the gaps. Sneaky pitch-control training disguised as an arcade game.</p>
+      <div class="card">
+        <canvas id="game-canvas"></canvas>
+        <div class="row">
+          <button class="btn primary" id="game-play">▶ Play</button>
+          <span class="muted" id="game-best-label"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDIO -->
+    <section class="view" id="view-studio">
+      <h2>Recording studio</h2>
+      <p class="intro">Record yourself singing, listen back, and download your takes. Recordings are
+        stored privately in your browser.</p>
+      <div class="card rec-controls">
+        <button class="btn primary" id="rec-toggle">⏺ Start recording</button>
+        <span id="rec-timer">0:00</span>
+      </div>
+      <div id="recording-list"></div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="view" id="view-progress">
+      <h2>Your progress</h2>
+      <div class="card">
+        <div class="stat-row">
+          <div class="stat"><div class="num" id="prog-streak">0 days</div><div class="lbl">practice streak</div></div>
+          <div class="stat"><div class="num" id="prog-total">0</div><div class="lbl">exercises completed</div></div>
+          <div class="stat"><div class="num" id="prog-range">not set</div><div class="lbl">vocal range</div></div>
+        </div>
+        <canvas id="prog-chart"></canvas>
+      </div>
+      <div class="card">
+        <h3 class="card-title">🏆 Achievements</h3>
+        <div id="badge-grid"></div>
+      </div>
+      <div class="card">
+        <table id="prog-table"></table>
+      </div>
+      <div class="row"><button class="btn ghost small danger" id="prog-reset">Reset progress</button></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+/*
+ * SingCoach pitch engine.
+ *
+ * Pure math only (no Web Audio) so the same file runs in the browser and in
+ * Node unit tests. Pitch detection uses the McLeod Pitch Method (MPM):
+ * a normalized square-difference autocorrelation with peak picking and
+ * parabolic interpolation, which is robust for the human voice.
+ */
+(function (global) {
+  'use strict';
+
+  var NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  var DEFAULTS = {
+    minFreq: 55,        // A1 — below any singing voice
+    maxFreq: 1200,      // above soprano C6, catches harmonics-free range
+    rmsThreshold: 0.008, // silence gate
+    clarityThreshold: 0.80,
+    peakPickRatio: 0.90
+  };
+
+  function freqToMidi(freq) {
+    return 69 + 12 * Math.log2(freq / 440);
+  }
+
+  function midiToFreq(midi) {
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+
+  // MIDI 60 => "C4". Accepts fractional midi (rounds to nearest semitone).
+  function midiToNoteName(midi) {
+    var m = Math.round(midi);
+    var octave = Math.floor(m / 12) - 1;
+    var name = NOTE_NAMES[((m % 12) + 12) % 12];
+    return name + octave;
+  }
+
+  // Signed cents from `freq` to the target frequency (+ means sharp).
+  function centsBetween(freq, targetFreq) {
+    return 1200 * Math.log2(freq / targetFreq);
+  }
+
+  // Cents from freq to the *nearest* equal-tempered semitone.
+  function centsToNearestNote(freq) {
+    var midi = freqToMidi(freq);
+    var nearest = Math.round(midi);
+    return { midi: nearest, cents: (midi - nearest) * 100, name: midiToNoteName(nearest) };
+  }
+
+  // Reusable work buffers — detectPitch runs ~60x/sec, so per-call
+  // allocations would create constant GC pressure.
+  var _scratch = {};
+  function scratch(key, len) {
+    var b = _scratch[key];
+    if (!b || b.length !== len) b = _scratch[key] = new Float32Array(len);
+    return b;
+  }
+
+  function rms(buf) {
+    var sum = 0;
+    for (var i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    return Math.sqrt(sum / buf.length);
+  }
+
+  /*
+   * Detect the fundamental frequency of `buf` (Float32Array of PCM samples
+   * in [-1, 1]) recorded at `sampleRate` Hz.
+   *
+   * Returns { freq, clarity, rms } or null when no confident pitch exists
+   * (silence, noise, or out-of-range input).
+   */
+  function detectPitch(buf, sampleRate, options) {
+    var opts = Object.assign({}, DEFAULTS, options || {});
+
+    var level = rms(buf);
+    if (level < opts.rmsThreshold) return null;
+
+    // Voice tops out far below Nyquist at studio sample rates, so decimate
+    // 2x (averaging pairs as a crude anti-alias filter). This makes the
+    // O(n·tau) correlation ~4x cheaper with negligible accuracy loss.
+    if (sampleRate >= 32000 && buf.length >= 512) {
+      var half = scratch('half', buf.length >> 1);
+      for (var d = 0; d < half.length; d++) {
+        half[d] = (buf[2 * d] + buf[2 * d + 1]) * 0.5;
+      }
+      buf = half;
+      sampleRate = sampleRate / 2;
+    }
+
+    var n = buf.length;
+    if (n < 128) return null;
+
+    var maxTau = Math.min(Math.floor(sampleRate / opts.minFreq), Math.floor(n / 2));
+    // Always scan from a tiny lag: starting at the maxFreq lag can land inside
+    // the first true peak's lobe, making the zero-lag skip swallow the real
+    // peak and return an octave-low result. Frequency bounds are enforced on
+    // the final result instead.
+    var minTau = 2;
+    if (minTau >= maxTau) return null;
+
+    // NSDF: nsdf[tau] = 2*acf(tau) / m(tau), in [-1, 1].
+    // The power term m(tau) = Σ x[i]² + x[i+tau]² over i < n-tau is computed
+    // incrementally (m(tau+1) = m(tau) - x[n-tau-1]² - x[tau]²), leaving only
+    // the autocorrelation product in the hot inner loop.
+    var nsdf = scratch('nsdf', maxTau + 1);
+    nsdf.fill(0);
+    var sumSq = 0;
+    for (var j = 0; j < n; j++) sumSq += buf[j] * buf[j];
+    var m = 2 * sumSq; // m(0)
+    for (var tau = 1; tau <= maxTau; tau++) {
+      var tail = buf[n - tau], head = buf[tau - 1];
+      m -= tail * tail + head * head;
+      if (tau < minTau) continue;
+      var acf = 0;
+      for (var i = 0, lim = n - tau; i < lim; i++) {
+        acf += buf[i] * buf[i + tau];
+      }
+      nsdf[tau] = m > 0 ? (2 * acf) / m : 0;
+    }
+
+    // Collect the key maximum between every pair of positive zero crossings.
+    var maxima = [];
+    var t = minTau;
+    while (t <= maxTau && nsdf[t] > 0) t++; // skip the initial lobe
+    while (t <= maxTau) {
+      while (t <= maxTau && nsdf[t] <= 0) t++;
+      var peakTau = -1, peakVal = -Infinity;
+      while (t <= maxTau && nsdf[t] > 0) {
+        if (nsdf[t] > peakVal) { peakVal = nsdf[t]; peakTau = t; }
+        t++;
+      }
+      if (peakTau > 0) maxima.push({ tau: peakTau, val: peakVal });
+    }
+    if (maxima.length === 0) return null;
+
+    var highest = 0;
+    for (var k = 0; k < maxima.length; k++) if (maxima[k].val > highest) highest = maxima[k].val;
+    var threshold = opts.peakPickRatio * highest;
+
+    var chosen = null;
+    for (k = 0; k < maxima.length; k++) {
+      if (maxima[k].val >= threshold) { chosen = maxima[k]; break; }
+    }
+    if (!chosen || chosen.val < opts.clarityThreshold) return null;
+
+    // Parabolic interpolation around the chosen lag for sub-sample accuracy.
+    var ct = chosen.tau;
+    var refined = ct;
+    if (ct > minTau && ct < maxTau) {
+      var y0 = nsdf[ct - 1], y1 = nsdf[ct], y2 = nsdf[ct + 1];
+      var denom = 2 * (2 * y1 - y0 - y2);
+      if (Math.abs(denom) > 1e-12) {
+        var shift = (y2 - y0) / denom;
+        if (shift > -1 && shift < 1) refined = ct + shift;
+      }
+    }
+
+    var freq = sampleRate / refined;
+    if (freq < opts.minFreq || freq > opts.maxFreq) return null;
+
+    return { freq: freq, clarity: Math.min(1, chosen.val), rms: level };
+  }
+
+  var Pitch = {
+    DEFAULTS: DEFAULTS,
+    NOTE_NAMES: NOTE_NAMES,
+    freqToMidi: freqToMidi,
+    midiToFreq: midiToFreq,
+    midiToNoteName: midiToNoteName,
+    centsBetween: centsBetween,
+    centsToNearestNote: centsToNearestNote,
+    rms: rms,
+    detectPitch: detectPitch
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Pitch;
+  else global.Pitch = Pitch;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach scoring — pure functions shared by browser and Node tests.
+ *
+ * A "sample" is one pitch-detector reading taken while the singer holds a
+ * note: { cents: signed cents vs the target, clarity: 0..1 }.
+ */
+(function (global) {
+  'use strict';
+
+  var IN_TUNE_CENTS = 50;      // within half a semitone counts as "on pitch"
+  var GREAT_CENTS = 20;        // professional-ish accuracy
+  var MIN_SAMPLES = 5;         // fewer voiced samples than this = not heard
+
+  function median(values) {
+    if (!values.length) return NaN;
+    var sorted = values.slice().sort(function (a, b) { return a - b; });
+    var mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  /*
+   * Score one sung note against its target.
+   * Returns { score: 0..100, heard, withinPct, medianCents, medianAbsCents, feedback }
+   */
+  function scoreNote(samples) {
+    var voiced = samples.filter(function (s) { return isFinite(s.cents); });
+    if (voiced.length < MIN_SAMPLES) {
+      return {
+        score: 0, heard: false, withinPct: 0,
+        medianCents: NaN, medianAbsCents: NaN,
+        feedback: "We couldn't hear you — sing louder and closer to the mic."
+      };
+    }
+
+    var cents = voiced.map(function (s) { return s.cents; });
+    var absCents = cents.map(Math.abs);
+    var within = absCents.filter(function (c) { return c <= IN_TUNE_CENTS; }).length;
+    var withinPct = within / voiced.length;
+    var med = median(cents);
+    var medAbs = median(absCents);
+
+    // 60% weight: fraction of the hold spent on pitch.
+    // 40% weight: how close the centre of your pitch was.
+    var accuracy = Math.max(0, 1 - medAbs / 100);
+    var score = Math.round(100 * (0.6 * withinPct + 0.4 * accuracy));
+
+    var feedback;
+    if (medAbs <= GREAT_CENTS && withinPct >= 0.8) {
+      feedback = 'Excellent — locked right onto the note!';
+    } else if (withinPct >= 0.6) {
+      feedback = med > 15 ? 'Good, but you drift slightly sharp (high). Relax and let the note settle.'
+        : med < -15 ? 'Good, but you drift slightly flat (low). More breath support!'
+        : 'Good — keep the note steadier as you hold it.';
+    } else if (med > IN_TUNE_CENTS) {
+      feedback = 'You sang sharp (too high). Listen again and slide down to meet the note.';
+    } else if (med < -IN_TUNE_CENTS) {
+      feedback = 'You sang flat (too low). Take a deeper breath and aim a touch higher.';
+    } else {
+      feedback = 'Your pitch wobbled around the note. Try humming it softly first.';
+    }
+
+    return {
+      score: score, heard: true, withinPct: withinPct,
+      medianCents: med, medianAbsCents: medAbs, feedback: feedback
+    };
+  }
+
+  // Combine per-note results into an exercise result.
+  function scoreExercise(noteResults) {
+    if (!noteResults.length) return { score: 0, stars: 0, heardAll: false };
+    var sum = 0, heardAll = true;
+    noteResults.forEach(function (r) { sum += r.score; if (!r.heard) heardAll = false; });
+    var score = Math.round(sum / noteResults.length);
+    return { score: score, stars: starsFor(score), heardAll: heardAll };
+  }
+
+  function starsFor(score) {
+    if (score >= 85) return 3;
+    if (score >= 65) return 2;
+    if (score >= 40) return 1;
+    return 0;
+  }
+
+  var Scoring = {
+    IN_TUNE_CENTS: IN_TUNE_CENTS,
+    MIN_SAMPLES: MIN_SAMPLES,
+    median: median,
+    scoreNote: scoreNote,
+    scoreExercise: scoreExercise,
+    starsFor: starsFor
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Scoring;
+  else global.Scoring = Scoring;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach exercise generators — pure functions, shared with Node tests.
+ *
+ * Every generator receives the singer's vocal range { low, high } (MIDI note
+ * numbers) and returns an exercise:
+ *   { id, title, description, notes: [{ midi, holdMs, label? }] }
+ */
+(function (global) {
+  'use strict';
+
+  var DEFAULT_RANGE = { low: 48, high: 72 }; // C3..C5 — safe middle ground
+  var MIN_RANGE_SPAN = 7;                    // need at least a fifth to train
+
+  function clampRange(range) {
+    var r = range && isFinite(range.low) && isFinite(range.high)
+      ? { low: Math.round(range.low), high: Math.round(range.high) }
+      : { low: DEFAULT_RANGE.low, high: DEFAULT_RANGE.high };
+    // Sanity: human singing range, low below high.
+    r.low = Math.min(Math.max(r.low, 36), 84);
+    r.high = Math.min(Math.max(r.high, 40), 96);
+    if (r.high - r.low < MIN_RANGE_SPAN) {
+      var mid = Math.round((r.low + r.high) / 2);
+      r.low = mid - 4;
+      r.high = mid + 4;
+    }
+    return r;
+  }
+
+  // The comfortable middle of the range, where beginners should train.
+  function comfortZone(range) {
+    var r = clampRange(range);
+    var span = r.high - r.low;
+    var pad = Math.max(1, Math.round(span * 0.2));
+    return { low: r.low + pad, high: r.high - pad };
+  }
+
+  function randInt(rng, lo, hi) { // inclusive
+    return lo + Math.floor(rng() * (hi - lo + 1));
+  }
+
+  /* Match single sustained notes, one at a time. */
+  function pitchMatch(range, count, rng) {
+    rng = rng || Math.random;
+    count = count || 5;
+    var zone = comfortZone(range);
+    var notes = [];
+    var prev = null;
+    for (var i = 0; i < count; i++) {
+      var midi;
+      var guard = 0;
+      do {
+        midi = randInt(rng, zone.low, zone.high);
+      } while (prev !== null && Math.abs(midi - prev) < 2 && ++guard < 20);
+      prev = midi;
+      notes.push({ midi: midi, holdMs: 2500 });
+    }
+    return {
+      id: 'pitch-match',
+      title: 'Pitch Matching',
+      description: 'Listen to each note, then sing it back and hold it steady.',
+      notes: notes
+    };
+  }
+
+  /* Five-note major scale, up and back down (do-re-mi-fa-sol-fa-mi-re-do). */
+  function scaleFiveNote(range, rng) {
+    rng = rng || Math.random;
+    var zone = comfortZone(range);
+    var top = 7; // a fifth above the root
+    var rootHigh = zone.high - top;
+    var root = rootHigh <= zone.low ? zone.low : randInt(rng, zone.low, rootHigh);
+    var degrees = [0, 2, 4, 5, 7, 5, 4, 2, 0];
+    var solfege = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'Fa', 'Mi', 'Re', 'Do'];
+    var notes = degrees.map(function (d, i) {
+      return { midi: root + d, holdMs: 1400, label: solfege[i] };
+    });
+    return {
+      id: 'scale-5',
+      title: 'Five-Note Scale',
+      description: 'Sing up the scale and back down, one clear note at a time.',
+      notes: notes
+    };
+  }
+
+  /* Hear a root, then sing the interval above it. */
+  function intervals(range, count, rng) {
+    rng = rng || Math.random;
+    count = count || 4;
+    var zone = comfortZone(range);
+    var choices = [
+      { semis: 2, name: 'Major 2nd' },
+      { semis: 4, name: 'Major 3rd' },
+      { semis: 5, name: 'Perfect 4th' },
+      { semis: 7, name: 'Perfect 5th' }
+    ];
+    var notes = [];
+    for (var i = 0; i < count; i++) {
+      var iv = choices[randInt(rng, 0, choices.length - 1)];
+      var rootHigh = zone.high - iv.semis;
+      var root = rootHigh <= zone.low ? zone.low : randInt(rng, zone.low, rootHigh);
+      notes.push({ midi: root, holdMs: 1800, label: 'Root' });
+      notes.push({ midi: root + iv.semis, holdMs: 1800, label: iv.name });
+    }
+    return {
+      id: 'intervals',
+      title: 'Interval Jumps',
+      description: 'Sing the first note, then leap cleanly to the second.',
+      notes: notes
+    };
+  }
+
+  /* Gentle warm-up: hum a comfy note, then step up and down by one tone. */
+  function warmupHum(range) {
+    var zone = comfortZone(range);
+    var mid = Math.round((zone.low + zone.high) / 2);
+    var seq = [0, 0, 2, 0, -2, 0].map(function (d, i) {
+      return { midi: mid + d, holdMs: 2200, label: i < 2 ? 'Hum' : 'Hum step' };
+    });
+    return {
+      id: 'warmup-hum',
+      title: 'Humming Warm-Up',
+      description: 'Hum each note gently with your lips closed. No pushing!',
+      notes: seq
+    };
+  }
+
+  function forId(id, range, rng) {
+    switch (id) {
+      case 'pitch-match': return pitchMatch(range, 5, rng);
+      case 'scale-5': return scaleFiveNote(range, rng);
+      case 'intervals': return intervals(range, 4, rng);
+      case 'warmup-hum': return warmupHum(range);
+      default: return null;
+    }
+  }
+
+  var CATALOG = [
+    { id: 'warmup-hum', title: 'Humming Warm-Up', level: 'Start here', blurb: 'Gentle hums to wake up your voice safely.' },
+    { id: 'pitch-match', title: 'Pitch Matching', level: 'Beginner', blurb: 'Hear a note, sing it back. The core skill of singing in tune.' },
+    { id: 'scale-5', title: 'Five-Note Scale', level: 'Beginner', blurb: 'Do–Re–Mi–Fa–Sol and back. Builds smooth, even steps.' },
+    { id: 'intervals', title: 'Interval Jumps', level: 'Improver', blurb: 'Leap between two notes accurately — the start of melody skills.' }
+  ];
+
+  var Exercises = {
+    DEFAULT_RANGE: DEFAULT_RANGE,
+    CATALOG: CATALOG,
+    clampRange: clampRange,
+    comfortZone: comfortZone,
+    pitchMatch: pitchMatch,
+    scaleFiveNote: scaleFiveNote,
+    intervals: intervals,
+    warmupHum: warmupHum,
+    forId: forId
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Exercises;
+  else global.Exercises = Exercises;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach beginner lessons — short, practical reading with "try it" tasks.
+ */
+(function (global) {
+  'use strict';
+
+  var LESSONS = [
+    {
+      id: 'posture',
+      title: '1. Stand Like a Singer',
+      minutes: 2,
+      body: [
+        'Your body is your instrument, and it works best when it is aligned and relaxed.',
+        '<strong>Feet</strong> shoulder-width apart, weight even. <strong>Knees</strong> soft, never locked. <strong>Shoulders</strong> rolled back and down — not raised. <strong>Head</strong> level, chin parallel to the floor, like a string gently pulls the crown of your head upward.',
+        'Common beginner mistake: reaching the chin up for high notes. It tightens your throat and makes high notes harder, not easier.'
+      ],
+      tryIt: 'Stand up, shake out your arms, then set your posture using the checklist above. Notice how much easier a deep breath feels.'
+    },
+    {
+      id: 'breathing',
+      title: '2. Breathe From Your Belly',
+      minutes: 3,
+      body: [
+        'Singers breathe low. When you inhale, your <strong>belly should expand</strong> — not your chest or shoulders. This is called diaphragmatic breathing, and it gives your voice steady power.',
+        'Exercise — <em>the book breath</em>: lie on your back with a book on your belly. Breathe so the book rises on the inhale and falls slowly on the exhale.',
+        'Exercise — <em>the hiss</em>: inhale low for 4 counts, then exhale on a steady "sss" for as long as you can. Aim for 20+ seconds with a perfectly even hiss. Do this daily; your note-holding power comes directly from it.'
+      ],
+      tryIt: 'Do 3 rounds of the hiss right now. Time yourself — write down your best. Beat it tomorrow.'
+    },
+    {
+      id: 'pitch',
+      title: '3. What "Singing In Tune" Means',
+      minutes: 3,
+      body: [
+        'Every note is a vibration speed (pitch). Singing in tune means your voice vibrates at the same speed as the target note. When you are slightly too high you are <strong>sharp</strong>; slightly too low is <strong>flat</strong>.',
+        'Good news: pitch accuracy is a <em>trainable skill</em>, not a talent you are born with. The loop is: listen → sing → check → adjust. This app closes that loop for you — its tuner hears your voice and shows exactly how close you are, in real time.',
+        'Tip: before singing a note back, <em>hear it in your head first</em> (this is called audiation). It roughly doubles most beginners’ accuracy.'
+      ],
+      tryIt: 'Open the Tuner tab, hum any comfortable note, and watch the needle. Try to hold it in the green zone for 5 seconds.'
+    },
+    {
+      id: 'warmup',
+      title: '4. Always Warm Up (Gently!)',
+      minutes: 2,
+      body: [
+        'Cold vocal cords strain easily. Two minutes of gentle warm-up protects your voice and instantly improves your sound.',
+        'Good warm-ups: <strong>lip trills</strong> (blow air through loosely closed lips, like a motorboat, while sliding your pitch up and down), <strong>humming</strong> gentle sirens, and <strong>yawn-sighs</strong> (a big yawn that slides down into a sigh).',
+        'Rule of thumb: warm-ups should feel like a gentle stretch, never like effort. If anything hurts or scratches — stop, drink water, and sing lower and quieter.'
+      ],
+      tryIt: 'Run the Humming Warm-Up in the Train tab before every practice session.'
+    },
+    {
+      id: 'range',
+      title: '5. Find Your Range, Stay In It',
+      minutes: 2,
+      body: [
+        'Your vocal range is the span from the lowest to the highest note you can sing comfortably. Beginners improve fastest by practising in the <em>middle</em> of their range, where the voice is relaxed.',
+        'Use the <strong>Range</strong> tab to measure yours: you will sing your lowest comfy note, then your highest. The app then personalises every exercise to sit in your sweet spot.',
+        'Your range will grow over time — re-test every couple of weeks. Never push for high notes to the point of strain; range grows from relaxed repetition, not force.'
+      ],
+      tryIt: 'Do the range test in the Range tab now — it takes 30 seconds and makes every exercise fit your voice.'
+    },
+    {
+      id: 'practice',
+      title: '6. How To Practise (10 Minutes a Day)',
+      minutes: 2,
+      body: [
+        'Ten focused minutes daily beats two hours once a week. Voices are muscles-plus-coordination; both grow with frequent, small doses.',
+        'A perfect beginner session: <strong>2 min</strong> breathing + posture → <strong>2 min</strong> Humming Warm-Up → <strong>4 min</strong> Pitch Matching or Five-Note Scale → <strong>2 min</strong> record yourself singing anything you enjoy in the Studio tab.',
+        'Recording yourself matters: everyone hates their recorded voice at first (you normally hear yourself through your skull, which adds bass). Push through it — listening back is the fastest way to spot and fix pitch drift.'
+      ],
+      tryIt: 'Do one full 10-minute session today, and check the Progress tab afterwards to start your streak.'
+    },
+    {
+      id: 'health',
+      title: '7. Take Care of Your Voice',
+      minutes: 2,
+      body: [
+        '<strong>Hydrate</strong>: your cords need water — sip regularly, all day.',
+        '<strong>Stop if it hurts</strong>: singing should never be painful. Pain, scratchiness, or losing your voice means rest, not pushing through.',
+        '<strong>Avoid whispering and screaming</strong> — both strain cords more than normal speech. If you are hoarse, be quiet and rest.',
+        'A relaxed voice today is a bigger, better voice next month.'
+      ],
+      tryIt: 'Get a glass of water before your next exercise. Seriously — go get it.'
+    }
+  ];
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = { LESSONS: LESSONS };
+  else global.Lessons = { LESSONS: LESSONS };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach progress store — localStorage-backed. Pure enough to unit test
+ * in Node by injecting a fake storage object.
+ */
+(function (global) {
+  'use strict';
+
+  var KEY = 'singcoach.progress.v1';
+
+  function makeStore(storage) {
+    storage = storage || (typeof localStorage !== 'undefined' ? localStorage : null);
+
+    function blank() {
+      return {
+        range: null,                 // { low, high } midi, from the range test
+        sessions: [],                // { date: 'YYYY-MM-DD', exerciseId, score, stars }
+        lessonsRead: {},             // { lessonId: true }
+        achievements: {},            // { badgeId: unlockDate }
+        gameBest: 0,                 // best Pitch Flyer score
+        recordingCount: 0            // total recordings ever saved
+      };
+    }
+
+    function load() {
+      if (!storage) return blank();
+      try {
+        var raw = storage.getItem(KEY);
+        if (!raw) return blank();
+        var data = JSON.parse(raw);
+        return Object.assign(blank(), data);
+      } catch (e) {
+        return blank();
+      }
+    }
+
+    function save(data) {
+      if (storage) storage.setItem(KEY, JSON.stringify(data));
+      return data;
+    }
+
+    function todayStr(now) {
+      var d = now ? new Date(now) : new Date();
+      var m = d.getMonth() + 1, day = d.getDate();
+      return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
+    }
+
+    return {
+      load: load,
+      setRange: function (low, high) {
+        var d = load();
+        d.range = { low: low, high: high };
+        return save(d);
+      },
+      addSession: function (exerciseId, score, stars, now) {
+        var d = load();
+        d.sessions.push({ date: todayStr(now), exerciseId: exerciseId, score: score, stars: stars });
+        if (d.sessions.length > 500) d.sessions = d.sessions.slice(-500);
+        return save(d);
+      },
+      addGameScore: function (score) {
+        var d = load();
+        if (score > d.gameBest) d.gameBest = score;
+        return save(d);
+      },
+      incrRecordings: function () {
+        var d = load();
+        d.recordingCount = (d.recordingCount || 0) + 1;
+        return save(d);
+      },
+      unlockAchievements: function (ids, now) {
+        var d = load();
+        ids.forEach(function (id) { d.achievements[id] = todayStr(now); });
+        return save(d);
+      },
+      markLessonRead: function (lessonId) {
+        var d = load();
+        d.lessonsRead[lessonId] = true;
+        return save(d);
+      },
+      // Consecutive days (ending today or yesterday) with >= 1 session.
+      streak: function (now) {
+        var d = load();
+        var days = {};
+        d.sessions.forEach(function (s) { days[s.date] = true; });
+        var count = 0;
+        var cursor = new Date(now || Date.now());
+        if (!days[todayStr(cursor)]) cursor.setDate(cursor.getDate() - 1); // today not practiced yet
+        while (days[todayStr(cursor)]) {
+          count++;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+        return count;
+      },
+      stats: function () {
+        var d = load();
+        var byEx = {};
+        d.sessions.forEach(function (s) {
+          var b = byEx[s.exerciseId] || (byEx[s.exerciseId] = { count: 0, sum: 0, best: 0 });
+          b.count++; b.sum += s.score;
+          if (s.score > b.best) b.best = s.score;
+        });
+        Object.keys(byEx).forEach(function (k) {
+          byEx[k].avg = Math.round(byEx[k].sum / byEx[k].count);
+        });
+        return { total: d.sessions.length, byExercise: byEx, range: d.range };
+      },
+      // Last N days as [{ date, count, avg }] oldest → newest.
+      recentDays: function (n, now) {
+        var d = load();
+        var byDate = {};
+        d.sessions.forEach(function (s) {
+          var b = byDate[s.date] || (byDate[s.date] = { count: 0, sum: 0 });
+          b.count++; b.sum += s.score;
+        });
+        var out = [];
+        var cursor = new Date(now || Date.now());
+        cursor.setDate(cursor.getDate() - (n - 1));
+        for (var i = 0; i < n; i++) {
+          var key = todayStr(cursor);
+          var b = byDate[key];
+          out.push({ date: key, count: b ? b.count : 0, avg: b ? Math.round(b.sum / b.count) : 0 });
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return out;
+      },
+      reset: function () { return save(blank()); },
+      _todayStr: todayStr
+    };
+  }
+
+  var Progress = { makeStore: makeStore, KEY: KEY };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Progress;
+  else global.Progress = Progress;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach achievements — pure logic, shared with Node tests.
+ *
+ * evaluate(data) returns the ids of every badge earned by `data`, where
+ * data is the progress store contents plus derived extras:
+ *   { sessions, range, achievements, gameBest, recordingCount, streak }
+ */
+(function (global) {
+  'use strict';
+
+  function triedIds(sessions) {
+    var ids = {};
+    (sessions || []).forEach(function (s) { ids[s.exerciseId] = true; });
+    return ids;
+  }
+
+  var BADGES = [
+    { id: 'first-note', icon: '🎵', title: 'First Note', desc: 'Complete your first exercise',
+      check: function (d) { return (d.sessions || []).length >= 1; } },
+    { id: 'warm-hummer', icon: '🐝', title: 'Warm Hummer', desc: 'Finish a Humming Warm-Up',
+      check: function (d) { return !!triedIds(d.sessions)['warmup-hum']; } },
+    { id: 'scale-climber', icon: '🪜', title: 'Scale Climber', desc: 'Finish a Five-Note Scale',
+      check: function (d) { return !!triedIds(d.sessions)['scale-5']; } },
+    { id: 'interval-hopper', icon: '🦘', title: 'Interval Hopper', desc: 'Finish an Interval Jumps round',
+      check: function (d) { return !!triedIds(d.sessions)['intervals']; } },
+    { id: 'all-rounder', icon: '🎪', title: 'All-Rounder', desc: 'Try all four exercises',
+      check: function (d) {
+        var t = triedIds(d.sessions);
+        return t['warmup-hum'] && t['pitch-match'] && t['scale-5'] && t['intervals'];
+      } },
+    { id: 'triple-star', icon: '⭐', title: 'Triple Star', desc: 'Earn 3 stars on any exercise',
+      check: function (d) { return (d.sessions || []).some(function (s) { return s.stars === 3; }); } },
+    { id: 'high-scorer', icon: '🎯', title: 'Sharpshooter', desc: 'Score 90+ on any exercise',
+      check: function (d) { return (d.sessions || []).some(function (s) { return s.score >= 90; }); } },
+    { id: 'dedicated', icon: '💪', title: 'Dedicated', desc: 'Complete 10 exercises',
+      check: function (d) { return (d.sessions || []).length >= 10; } },
+    { id: 'committed', icon: '🔥', title: 'On Fire', desc: 'Complete 25 exercises',
+      check: function (d) { return (d.sessions || []).length >= 25; } },
+    { id: 'streak-3', icon: '📅', title: 'Habit Forming', desc: 'Practise 3 days in a row',
+      check: function (d) { return (d.streak || 0) >= 3; } },
+    { id: 'streak-7', icon: '🗓️', title: 'Week Warrior', desc: 'Practise 7 days in a row',
+      check: function (d) { return (d.streak || 0) >= 7; } },
+    { id: 'octave-club', icon: '📏', title: 'Octave Club', desc: 'Measure a range of an octave or more',
+      check: function (d) { return d.range && d.range.high - d.range.low >= 12; } },
+    { id: 'two-octaves', icon: '🌈', title: 'Two Octaves!', desc: 'Measure a range of two octaves or more',
+      check: function (d) { return d.range && d.range.high - d.range.low >= 24; } },
+    { id: 'first-take', icon: '🎙️', title: 'First Take', desc: 'Save a recording in the Studio',
+      check: function (d) { return (d.recordingCount || 0) >= 1; } },
+    { id: 'game-rookie', icon: '🎈', title: 'Balloon Pilot', desc: 'Score 5 in Pitch Flyer',
+      check: function (d) { return (d.gameBest || 0) >= 5; } },
+    { id: 'game-ace', icon: '🕹️', title: 'Arcade Ace', desc: 'Score 15 in Pitch Flyer',
+      check: function (d) { return (d.gameBest || 0) >= 15; } },
+    { id: 'game-legend', icon: '👑', title: 'Pitch Royalty', desc: 'Score 30 in Pitch Flyer',
+      check: function (d) { return (d.gameBest || 0) >= 30; } }
+  ];
+
+  function evaluate(data) {
+    return BADGES.filter(function (b) {
+      try { return !!b.check(data || {}); } catch (e) { return false; }
+    }).map(function (b) { return b.id; });
+  }
+
+  // Earned-but-not-yet-stored badge ids.
+  function newUnlocks(data) {
+    var have = (data && data.achievements) || {};
+    return evaluate(data).filter(function (id) { return !have[id]; });
+  }
+
+  function byId(id) {
+    for (var i = 0; i < BADGES.length; i++) if (BADGES[i].id === id) return BADGES[i];
+    return null;
+  }
+
+  var Achievements = { BADGES: BADGES, evaluate: evaluate, newUnlocks: newUnlocks, byId: byId };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Achievements;
+  else global.Achievements = Achievements;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach audio layer (browser only).
+ *  - MicEngine: microphone capture + continuous pitch analysis
+ *  - TonePlayer: plays reference notes with a soft synth voice
+ */
+(function (global) {
+  'use strict';
+
+  /* ------------------------------------------------------------------ */
+  /* MicEngine                                                           */
+  /* ------------------------------------------------------------------ */
+
+  function MicEngine() {
+    this.ctx = null;
+    this.stream = null;
+    this.analyser = null;
+    this.buffer = null;
+    this.running = false;
+    this.listeners = [];
+    this._raf = 0;
+    // Median-of-3 smoothing to suppress octave-error blips.
+    this._recent = [];
+  }
+
+  MicEngine.prototype.onReading = function (fn) {
+    this.listeners.push(fn);
+    var self = this;
+    return function () {
+      var i = self.listeners.indexOf(fn);
+      if (i >= 0) self.listeners.splice(i, 1);
+    };
+  };
+
+  MicEngine.prototype.start = async function () {
+    if (this.running) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('This browser cannot access the microphone. Try Chrome, Edge or Firefox.');
+    }
+    // Voice-friendly constraints: processing like echo cancellation and
+    // auto gain distorts sung pitch and level, so ask for a raw signal.
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      }
+    });
+    var AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = this.ctx || new AC();
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+
+    var source = this.ctx.createMediaStreamSource(this.stream);
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 2048;
+    source.connect(this.analyser);
+    this.buffer = new Float32Array(this.analyser.fftSize);
+    this.running = true;
+    this._loop();
+  };
+
+  MicEngine.prototype.stop = function () {
+    this.running = false;
+    if (this._raf) cancelAnimationFrame(this._raf);
+    this._raf = 0;
+    if (this.stream) {
+      this.stream.getTracks().forEach(function (t) { t.stop(); });
+      this.stream = null;
+    }
+    this._recent = [];
+  };
+
+  MicEngine.prototype._loop = function () {
+    var self = this;
+    function tick() {
+      if (!self.running) return;
+      self.analyser.getFloatTimeDomainData(self.buffer);
+      var raw = Pitch.detectPitch(self.buffer, self.ctx.sampleRate);
+      var reading = self._smooth(raw);
+      reading.rms = raw ? raw.rms : Pitch.rms(self.buffer);
+      reading.time = performance.now();
+      for (var i = 0; i < self.listeners.length; i++) self.listeners[i](reading);
+      self._raf = requestAnimationFrame(tick);
+    }
+    this._raf = requestAnimationFrame(tick);
+  };
+
+  // Turn a raw detection into a stable reading using a median of the last 3
+  // voiced frames. Returns { voiced, freq, midi, clarity }.
+  MicEngine.prototype._smooth = function (raw) {
+    if (!raw) {
+      this._recent.length = 0;
+      return { voiced: false, freq: 0, midi: NaN, clarity: 0 };
+    }
+    this._recent.push(raw.freq);
+    if (this._recent.length > 3) this._recent.shift();
+    var sorted = this._recent.slice().sort(function (a, b) { return a - b; });
+    var freq = sorted[Math.floor(sorted.length / 2)];
+    return { voiced: true, freq: freq, midi: Pitch.freqToMidi(freq), clarity: raw.clarity };
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* TonePlayer                                                          */
+  /* ------------------------------------------------------------------ */
+
+  function TonePlayer(getCtx) {
+    this._getCtx = getCtx; // share the mic's AudioContext when available
+    this._ownCtx = null;
+  }
+
+  TonePlayer.prototype._ctx = function () {
+    var shared = this._getCtx && this._getCtx();
+    if (shared) return shared;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    this._ownCtx = this._ownCtx || new AC();
+    return this._ownCtx;
+  };
+
+  /*
+   * Play a reference note. Returns a promise resolving when it ends.
+   * Soft "ooh" style voice: sine fundamental + quiet 2nd/3rd harmonics
+   * through an ADSR-ish envelope, so it is easy to match with a voice.
+   */
+  TonePlayer.prototype.playNote = function (midi, durMs) {
+    var ctx = this._ctx();
+    var self = this;
+    return (ctx.state === 'suspended' ? ctx.resume() : Promise.resolve()).then(function () {
+      return self._playOn(ctx, midi, durMs);
+    });
+  };
+
+  TonePlayer.prototype._playOn = function (ctx, midi, durMs) {
+    var freq = Pitch.midiToFreq(midi);
+    var dur = (durMs || 1500) / 1000;
+    var t0 = ctx.currentTime;
+
+    var master = ctx.createGain();
+    master.gain.setValueAtTime(0, t0);
+    master.gain.linearRampToValueAtTime(0.28, t0 + 0.04);
+    master.gain.setValueAtTime(0.28, t0 + dur - 0.15);
+    master.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    master.connect(ctx.destination);
+
+    var partials = [
+      { mult: 1, gain: 1.0 },
+      { mult: 2, gain: 0.25 },
+      { mult: 3, gain: 0.08 }
+    ];
+    var oscs = partials.map(function (p) {
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq * p.mult;
+      var g = ctx.createGain();
+      g.gain.value = p.gain;
+      osc.connect(g);
+      g.connect(master);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+      return osc;
+    });
+
+    return new Promise(function (resolve) {
+      oscs[0].onended = function () { resolve(); };
+    });
+  };
+
+  // Short confirmation blip (correct answer, phase change, etc.)
+  TonePlayer.prototype.blip = function (good) {
+    var ctx = this._ctx();
+    var t0 = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = good ? 1320 : 220;
+    g.gain.setValueAtTime(0.12, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + 0.2);
+  };
+
+  global.MicEngine = MicEngine;
+  global.TonePlayer = TonePlayer;
+})(window);
+
+</script>
+  <script>
+/*
+ * SingCoach recording studio backend (browser only).
+ *  - Recorder: wraps MediaRecorder on the mic stream
+ *  - RecordingStore: persists takes in IndexedDB so they survive reloads
+ */
+(function (global) {
+  'use strict';
+
+  /* ------------------------------------------------------------------ */
+  /* Recorder                                                            */
+  /* ------------------------------------------------------------------ */
+
+  function pickMimeType() {
+    if (typeof MediaRecorder === 'undefined') return null;
+    var candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    for (var i = 0; i < candidates.length; i++) {
+      if (MediaRecorder.isTypeSupported(candidates[i])) return candidates[i];
+    }
+    return ''; // let the browser choose
+  }
+
+  function Recorder(stream) {
+    if (typeof MediaRecorder === 'undefined') {
+      throw new Error('Recording is not supported in this browser.');
+    }
+    var mime = pickMimeType();
+    this.mimeType = mime || 'audio/webm';
+    this._rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    this._chunks = [];
+    this.startedAt = 0;
+  }
+
+  Recorder.prototype.start = function () {
+    this._chunks = [];
+    var self = this;
+    this._rec.ondataavailable = function (e) {
+      if (e.data && e.data.size > 0) self._chunks.push(e.data);
+    };
+    this.startedAt = Date.now();
+    this._rec.start(250); // gather data every 250ms so nothing is lost
+  };
+
+  // Resolves with { blob, durationMs, mimeType }
+  Recorder.prototype.stop = function () {
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      self._rec.onstop = function () {
+        var blob = new Blob(self._chunks, { type: self.mimeType });
+        resolve({ blob: blob, durationMs: Date.now() - self.startedAt, mimeType: self.mimeType });
+      };
+      self._rec.onerror = function (e) { reject(e.error || new Error('Recording failed')); };
+      try { self._rec.stop(); } catch (err) { reject(err); }
+    });
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* RecordingStore (IndexedDB)                                          */
+  /* ------------------------------------------------------------------ */
+
+  var DB_NAME = 'singcoach';
+  var STORE = 'recordings';
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  function tx(db, mode, fn) {
+    return new Promise(function (resolve, reject) {
+      var t = db.transaction(STORE, mode);
+      var store = t.objectStore(STORE);
+      var out = fn(store);
+      t.oncomplete = function () { resolve(out && out.result !== undefined ? out.result : undefined); };
+      t.onerror = function () { reject(t.error); };
+      t.onabort = function () { reject(t.error || new Error('IndexedDB transaction aborted')); };
+    });
+  }
+
+  var RecordingStore = {
+    save: function (rec) {
+      // rec: { name, blob, durationMs, mimeType, createdAt }
+      return openDb().then(function (db) {
+        return tx(db, 'readwrite', function (store) { return store.add(rec); });
+      });
+    },
+    list: function () {
+      return openDb().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var t = db.transaction(STORE, 'readonly');
+          var req = t.objectStore(STORE).getAll();
+          req.onsuccess = function () {
+            var all = req.result || [];
+            all.sort(function (a, b) { return b.createdAt - a.createdAt; });
+            resolve(all);
+          };
+          req.onerror = function () { reject(req.error); };
+        });
+      });
+    },
+    remove: function (id) {
+      return openDb().then(function (db) {
+        return tx(db, 'readwrite', function (store) { return store.delete(id); });
+      });
+    }
+  };
+
+  global.Recorder = Recorder;
+  global.RecordingStore = RecordingStore;
+})(window);
+
+</script>
+  <script>
+/*
+ * SingCoach trainer — runs one exercise as a state machine:
+ * for each note: LISTEN (reference tone plays) → SING (collect pitch
+ * samples) → per-note result; then a final exercise score.
+ *
+ * The trainer knows nothing about the DOM; the app subscribes to events:
+ *   onState({ phase, noteIndex, note, msLeft })
+ *   onLive({ cents, voiced })           — during SING
+ *   onNoteResult(result, noteIndex)
+ *   onDone({ score, stars, noteResults })
+ */
+(function (global) {
+  'use strict';
+
+  var LISTEN_EXTRA_MS = 350;  // small gap after the reference tone
+  var GET_READY_MS = 900;
+
+  function Trainer(mic, tones) {
+    this.mic = mic;
+    this.tones = tones;
+    this.onState = function () {};
+    this.onLive = function () {};
+    this.onNoteResult = function () {};
+    this.onDone = function () {};
+    this._cancelled = false;
+    this._unsub = null;
+  }
+
+  Trainer.prototype.cancel = function () {
+    this._cancelled = true;
+    if (this._unsub) { this._unsub(); this._unsub = null; }
+  };
+
+  Trainer.prototype._sleep = function (ms) {
+    var self = this;
+    return new Promise(function (resolve) {
+      var start = performance.now();
+      function step() {
+        if (self._cancelled) return resolve();
+        if (performance.now() - start >= ms) return resolve();
+        requestAnimationFrame(step);
+      }
+      step();
+    });
+  };
+
+  Trainer.prototype.run = async function (exercise) {
+    this._cancelled = false;
+    var noteResults = [];
+
+    for (var i = 0; i < exercise.notes.length; i++) {
+      if (this._cancelled) return null;
+      var note = exercise.notes[i];
+
+      // LISTEN: play the reference
+      this.onState({ phase: 'listen', noteIndex: i, note: note });
+      await this.tones.playNote(note.midi, Math.min(note.holdMs, 1800));
+      await this._sleep(LISTEN_EXTRA_MS);
+      if (this._cancelled) return null;
+
+      // GET READY
+      this.onState({ phase: 'ready', noteIndex: i, note: note });
+      await this._sleep(GET_READY_MS);
+      if (this._cancelled) return null;
+
+      // SING: collect samples for holdMs
+      this.onState({ phase: 'sing', noteIndex: i, note: note });
+      var samples = await this._collect(note);
+      if (this._cancelled) return null;
+
+      var result = Scoring.scoreNote(samples);
+      result.targetMidi = note.midi;
+      noteResults.push(result);
+      this.onNoteResult(result, i);
+      this.tones.blip(result.score >= 65);
+      await this._sleep(900);
+    }
+
+    var total = Scoring.scoreExercise(noteResults);
+    total.noteResults = noteResults;
+    this.onDone(total);
+    return total;
+  };
+
+  Trainer.prototype._collect = function (note) {
+    var self = this;
+    var targetFreq = Pitch.midiToFreq(note.midi);
+    var samples = [];
+    return new Promise(function (resolve) {
+      var start = performance.now();
+      var finished = false;
+      function finish() {
+        if (finished) return;
+        finished = true;
+        clearTimeout(guard);
+        if (self._unsub) { self._unsub(); self._unsub = null; }
+        resolve(samples);
+      }
+      // Readings stop if the mic is turned off mid-exercise; never hang.
+      var guard = setTimeout(finish, note.holdMs + 2000);
+      self._unsub = self.mic.onReading(function (r) {
+        var elapsed = performance.now() - start;
+        if (self._cancelled || elapsed >= note.holdMs) {
+          finish();
+          return;
+        }
+        if (r.voiced) {
+          var cents = Pitch.centsBetween(r.freq, targetFreq);
+          samples.push({ cents: cents, clarity: r.clarity });
+          self.onLive({ cents: cents, voiced: true, msLeft: note.holdMs - elapsed });
+        } else {
+          self.onLive({ cents: NaN, voiced: false, msLeft: note.holdMs - elapsed });
+        }
+      });
+    });
+  };
+
+  /*
+   * Range test helper: collect voiced readings for `ms`, return the median
+   * MIDI value (or null if barely voiced). Used to find lowest/highest note.
+   */
+  Trainer.prototype.measureHeldNote = function (ms) {
+    var self = this;
+    var midis = [];
+    return new Promise(function (resolve) {
+      var start = performance.now();
+      var finished = false;
+      function finish() {
+        if (finished) return;
+        finished = true;
+        clearTimeout(guard);
+        unsub();
+        if (midis.length < 10) return resolve(null);
+        midis.sort(function (a, b) { return a - b; });
+        resolve(midis[Math.floor(midis.length / 2)]);
+      }
+      var guard = setTimeout(finish, ms + 2000);
+      var unsub = self.mic.onReading(function (r) {
+        var elapsed = performance.now() - start;
+        if (elapsed >= ms) {
+          finish();
+          return;
+        }
+        if (r.voiced) {
+          midis.push(r.midi);
+          self.onLive({ midi: r.midi, voiced: true, msLeft: ms - elapsed });
+        } else {
+          self.onLive({ midi: NaN, voiced: false, msLeft: ms - elapsed });
+        }
+      });
+    });
+  };
+
+  global.Trainer = Trainer;
+})(window);
+
+</script>
+  <script>
+/*
+ * Pitch Flyer — a voice-controlled arcade game (browser only).
+ *
+ * Your singing pitch steers a balloon up and down; fly through the gaps in
+ * the walls. Higher pitch = higher balloon. Great disguised training for
+ * pitch control and smooth register changes.
+ */
+(function (global) {
+  'use strict';
+
+  var PLAYER_R = 16;         // balloon radius, px
+  var WALL_W = 52;           // wall width, px
+  var GAP_SEMIS = 6;         // gap height in semitones (forgiving)
+  var WALL_SPACING = 340;    // px between walls
+  var BASE_SPEED = 110;      // px/s, ramps up slowly
+  var MAX_SPEED = 240;
+  var ZONE_PAD = 2;          // extra semitones beyond the comfort zone
+
+  function PitchFlyer(canvas, mic) {
+    this.canvas = canvas;
+    this.g = canvas.getContext('2d');
+    this.mic = mic;
+    this.state = 'idle';     // idle | countdown | playing | over
+    this.score = 0;
+    this.best = 0;
+    this.onGameOver = function () {};
+    this._lastMidi = NaN;
+    this._voiced = false;
+    this._raf = 0;
+    this._unsub = null;
+    this._countdownT = 0;
+  }
+
+  PitchFlyer.prototype.setZone = function (range) {
+    // range: comfort zone midi bounds; pad a little so edges are reachable.
+    this.zoneLow = range.low - ZONE_PAD;
+    this.zoneHigh = range.high + ZONE_PAD;
+  };
+
+  PitchFlyer.prototype.start = function () {
+    var self = this;
+    this.score = 0;
+    this.walls = [];
+    this.speed = BASE_SPEED;
+    this.distSinceWall = WALL_SPACING * 0.5;
+    this.vy = 0;
+    this.py = 0.5; // normalized 0(top)..1(bottom)
+    this.state = 'countdown';
+    this._countdownT = performance.now();
+    if (!this._unsub) {
+      this._unsub = this.mic.onReading(function (r) {
+        self._voiced = r.voiced;
+        if (r.voiced) self._lastMidi = r.midi;
+      });
+    }
+    this._lastFrame = performance.now();
+    if (!this._raf) this._loop();
+  };
+
+  PitchFlyer.prototype.stop = function () {
+    this.state = 'idle';
+    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; }
+    if (this._unsub) { this._unsub(); this._unsub = null; }
+  };
+
+  PitchFlyer.prototype._yForMidi = function (midi, h) {
+    var t = (midi - this.zoneLow) / (this.zoneHigh - this.zoneLow);
+    return h - Math.max(0, Math.min(1, t)) * h;
+  };
+
+  PitchFlyer.prototype._loop = function () {
+    var self = this;
+    function frame(now) {
+      self._raf = requestAnimationFrame(frame);
+      var dt = Math.min(0.05, (now - self._lastFrame) / 1000);
+      self._lastFrame = now;
+      self._update(dt, now);
+      self._draw(now);
+    }
+    this._raf = requestAnimationFrame(frame);
+  };
+
+  PitchFlyer.prototype._update = function (dt, now) {
+    if (this.state === 'countdown') {
+      if (now - this._countdownT >= 3000) this.state = 'playing';
+      return;
+    }
+    if (this.state !== 'playing') return;
+
+    var h = this.canvas.clientHeight;
+
+    // Player vertical motion: pitch pulls the balloon, silence lets it sink.
+    if (this._voiced && isFinite(this._lastMidi)) {
+      var target = this._yForMidi(this._lastMidi, h) / h;
+      this.py += (target - this.py) * Math.min(1, dt * 9);
+      this.vy = 0;
+    } else {
+      this.vy = Math.min(0.9, this.vy + 1.4 * dt);
+      this.py = Math.min(1, this.py + this.vy * dt);
+    }
+
+    // Scroll world & spawn walls.
+    var dx = this.speed * dt;
+    this.distSinceWall += dx;
+    if (this.distSinceWall >= WALL_SPACING) {
+      this.distSinceWall = 0;
+      var gapSemis = GAP_SEMIS;
+      var span = this.zoneHigh - this.zoneLow;
+      var lo = this.zoneLow + 1 + Math.random() * Math.max(1, span - gapSemis - 2);
+      this.walls.push({ x: this.canvas.clientWidth + WALL_W, gapLow: lo, gapHigh: lo + gapSemis, passed: false });
+    }
+    var px = this.canvas.clientWidth * 0.22;
+    var pyPx = this.py * h;
+    for (var i = this.walls.length - 1; i >= 0; i--) {
+      var w = this.walls[i];
+      w.x -= dx;
+      if (!w.passed && w.x + WALL_W < px - PLAYER_R) {
+        w.passed = true;
+        this.score++;
+        this.speed = Math.min(MAX_SPEED, this.speed + 4);
+      }
+      if (w.x < -WALL_W) { this.walls.splice(i, 1); continue; }
+      // Collision: player circle vs wall rects (above & below the gap).
+      if (px + PLAYER_R > w.x && px - PLAYER_R < w.x + WALL_W) {
+        var gapTop = this._yForMidi(w.gapHigh, h);
+        var gapBot = this._yForMidi(w.gapLow, h);
+        if (pyPx - PLAYER_R < gapTop || pyPx + PLAYER_R > gapBot) {
+          this._gameOver();
+          return;
+        }
+      }
+    }
+  };
+
+  PitchFlyer.prototype._gameOver = function () {
+    this.state = 'over';
+    if (this.score > this.best) this.best = this.score;
+    this.onGameOver(this.score);
+  };
+
+  PitchFlyer.prototype._draw = function (now) {
+    var canvas = this.canvas;
+    var dpr = window.devicePixelRatio || 1;
+    var cw = canvas.clientWidth, ch = canvas.clientHeight;
+    if (canvas.width !== cw * dpr) { canvas.width = cw * dpr; canvas.height = ch * dpr; }
+    var g = this.g;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, cw, ch);
+
+    // Note grid for orientation.
+    g.font = '10px system-ui, sans-serif';
+    for (var m = Math.ceil(this.zoneLow); m <= this.zoneHigh; m++) {
+      var y = this._yForMidi(m, ch);
+      var isC = m % 12 === 0;
+      g.strokeStyle = isC ? 'rgba(140,160,255,0.30)' : 'rgba(255,255,255,0.05)';
+      g.beginPath(); g.moveTo(0, y); g.lineTo(cw, y); g.stroke();
+      if (isC || m % 12 === 7) {
+        g.fillStyle = 'rgba(255,255,255,0.35)';
+        g.fillText(Pitch.midiToNoteName(m), 4, y - 2);
+      }
+    }
+
+    // Walls.
+    for (var i = 0; i < this.walls.length; i++) {
+      var w = this.walls[i];
+      var gapTop = this._yForMidi(w.gapHigh, ch);
+      var gapBot = this._yForMidi(w.gapLow, ch);
+      g.fillStyle = '#2dd4bf';
+      g.strokeStyle = 'rgba(0,0,0,0.25)';
+      g.fillRect(w.x, 0, WALL_W, gapTop);
+      g.fillRect(w.x, gapBot, WALL_W, ch - gapBot);
+      g.strokeRect(w.x, 0, WALL_W, gapTop);
+      g.strokeRect(w.x, gapBot, WALL_W, ch - gapBot);
+    }
+
+    // Player balloon.
+    var px = cw * 0.22, py = this.py * ch;
+    g.font = (PLAYER_R * 2.1) + 'px serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('🎈', px, py);
+    g.textAlign = 'start';
+    g.textBaseline = 'alphabetic';
+
+    // HUD.
+    g.font = 'bold 26px system-ui, sans-serif';
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.fillText(String(this.score), cw - 54, 36);
+    g.font = '12px system-ui, sans-serif';
+    g.fillStyle = 'rgba(255,255,255,0.45)';
+    g.fillText('best ' + this.best, cw - 54, 52);
+
+    if (this.state === 'countdown') {
+      var left = Math.max(0, 3 - Math.floor((now - this._countdownT) / 1000));
+      g.font = 'bold 64px system-ui, sans-serif';
+      g.fillStyle = 'rgba(255,255,255,0.85)';
+      g.textAlign = 'center';
+      g.fillText(left > 0 ? String(left) : 'Sing!', cw / 2, ch / 2);
+      g.font = '15px system-ui, sans-serif';
+      g.fillStyle = 'rgba(255,255,255,0.55)';
+      g.fillText('Sing high to float up, low to sink. Silence = falling!', cw / 2, ch / 2 + 40);
+      g.textAlign = 'start';
+    } else if (this.state === 'over') {
+      g.fillStyle = 'rgba(10,14,28,0.72)';
+      g.fillRect(0, 0, cw, ch);
+      g.textAlign = 'center';
+      g.font = 'bold 40px system-ui, sans-serif';
+      g.fillStyle = '#fbbf24';
+      g.fillText('💥 ' + this.score, cw / 2, ch / 2 - 14);
+      g.font = '15px system-ui, sans-serif';
+      g.fillStyle = 'rgba(255,255,255,0.7)';
+      g.fillText('best ' + this.best + ' — press Play to fly again', cw / 2, ch / 2 + 18);
+      g.textAlign = 'start';
+    }
+  };
+
+  global.PitchFlyer = PitchFlyer;
+})(window);
+
+</script>
+  <script>
+/*
+ * SingCoach main application: tabs, tuner visualisation, exercise runner UI,
+ * range test, recording studio and progress views.
+ */
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------- */
+  /* Shared state                                                      */
+  /* ---------------------------------------------------------------- */
+
+  var mic = new MicEngine();
+  var tones = new TonePlayer(function () { return mic.ctx; });
+  var trainer = new Trainer(mic, tones);
+  var store = Progress.makeStore();
+  var recorder = null;
+
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+
+  function el(tag, cls, html) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (html !== undefined) node.innerHTML = html;
+    return node;
+  }
+
+  function fmtTime(ms) {
+    var s = Math.floor(ms / 1000);
+    return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+  }
+
+  function userRange() {
+    var r = store.load().range;
+    return Exercises.clampRange(r || Exercises.DEFAULT_RANGE);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Microphone control (shared banner + button)                       */
+  /* ---------------------------------------------------------------- */
+
+  var micButtons = $$('.mic-toggle');
+
+  function setMicUi() {
+    micButtons.forEach(function (b) {
+      b.textContent = mic.running ? '🎤 Microphone on' : '🎤 Enable microphone';
+      b.classList.toggle('on', mic.running);
+    });
+    $$('.needs-mic').forEach(function (n) {
+      n.classList.toggle('mic-ready', mic.running);
+    });
+  }
+
+  async function ensureMic() {
+    if (mic.running) return true;
+    try {
+      await mic.start();
+      setMicUi();
+      return true;
+    } catch (err) {
+      var msg = err && err.name === 'NotAllowedError'
+        ? 'Microphone access was blocked. Click the padlock/mic icon in your address bar and allow the microphone, then try again.'
+        : 'Could not start the microphone: ' + (err.message || err);
+      showToast(msg, true);
+      return false;
+    }
+  }
+
+  micButtons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (mic.running) { mic.stop(); setMicUi(); }
+      else ensureMic();
+    });
+  });
+
+  var toastTimer = 0;
+  function showToast(msg, isError) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = 'toast'; }, 5000);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Tabs                                                              */
+  /* ---------------------------------------------------------------- */
+
+  function switchTab(name) {
+    $$('.tab-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
+    $$('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
+    if (name === 'progress') renderProgress();
+    if (name === 'studio') renderRecordings();
+    if (name === 'train') renderCatalog();
+    if (name === 'range') renderRangeIntro();
+    if (name === 'game') renderGameIntro();
+    if (name !== 'game' && game) game.stop(); // don't run the game loop off-screen
+  }
+
+  $$('.tab-btn').forEach(function (b) {
+    b.addEventListener('click', function () { switchTab(b.dataset.tab); });
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Learn view                                                        */
+  /* ---------------------------------------------------------------- */
+
+  function renderLessons() {
+    var wrap = $('#lesson-list');
+    wrap.innerHTML = '';
+    var read = store.load().lessonsRead;
+    Lessons.LESSONS.forEach(function (lesson) {
+      var card = el('div', 'card lesson' + (read[lesson.id] ? ' read' : ''));
+      var head = el('button', 'lesson-head');
+      head.innerHTML = '<span class="lesson-title">' + lesson.title + '</span>' +
+        '<span class="lesson-meta">' + lesson.minutes + ' min ' + (read[lesson.id] ? '✓' : '') + '</span>';
+      var body = el('div', 'lesson-body');
+      body.innerHTML = lesson.body.map(function (p) { return '<p>' + p + '</p>'; }).join('') +
+        '<p class="try-it"><strong>Try it:</strong> ' + lesson.tryIt + '</p>';
+      head.addEventListener('click', function () {
+        var open = card.classList.toggle('open');
+        if (open && !store.load().lessonsRead[lesson.id]) {
+          store.markLessonRead(lesson.id);
+          head.querySelector('.lesson-meta').innerHTML = lesson.minutes + ' min ✓';
+          card.classList.add('read');
+        }
+      });
+      card.appendChild(head);
+      card.appendChild(body);
+      wrap.appendChild(card);
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Tuner view                                                        */
+  /* ---------------------------------------------------------------- */
+
+  var tunerCanvas = $('#tuner-trace');
+  var tunerCtx = tunerCanvas.getContext('2d');
+  var traceData = []; // { midi or NaN }
+  var TRACE_LEN = 300;
+
+  function drawTuner() {
+    var canvas = tunerCanvas;
+    var w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+    var h = canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1);
+    var g = tunerCtx;
+    g.clearRect(0, 0, w, h);
+
+    // Choose a window of ~14 semitones centred on recent pitch (or range middle).
+    var recent = traceData.filter(function (d) { return isFinite(d); }).slice(-40);
+    var center;
+    if (recent.length) {
+      var sorted = recent.slice().sort(function (a, b) { return a - b; });
+      center = sorted[Math.floor(sorted.length / 2)];
+    } else {
+      var r = userRange();
+      center = (r.low + r.high) / 2;
+    }
+    var lowMidi = Math.floor(center - 7), highMidi = Math.ceil(center + 7);
+
+    function yFor(midi) {
+      return h - ((midi - lowMidi) / (highMidi - lowMidi)) * h;
+    }
+
+    // Note grid lines
+    g.font = Math.round(11 * (window.devicePixelRatio || 1)) + 'px system-ui, sans-serif';
+    for (var m = lowMidi; m <= highMidi; m++) {
+      var y = yFor(m);
+      var isC = m % 12 === 0;
+      g.strokeStyle = isC ? 'rgba(140,160,255,0.35)' : 'rgba(255,255,255,0.07)';
+      g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
+      if (isC || m % 12 === 7) {
+        g.fillStyle = 'rgba(255,255,255,0.45)';
+        g.fillText(Pitch.midiToNoteName(m), 6, y - 3);
+      }
+    }
+
+    // Pitch trace
+    g.lineWidth = 2.5 * (window.devicePixelRatio || 1);
+    g.strokeStyle = '#5eead4';
+    g.beginPath();
+    var started = false;
+    for (var i = 0; i < traceData.length; i++) {
+      var midi = traceData[i];
+      var x = (i / TRACE_LEN) * w;
+      if (!isFinite(midi)) { started = false; continue; }
+      var yy = yFor(midi);
+      if (!started) { g.moveTo(x, yy); started = true; }
+      else g.lineTo(x, yy);
+    }
+    g.stroke();
+  }
+
+  mic.onReading(function (r) {
+    // volume meter
+    var meter = $('#vol-meter-fill');
+    var pct = Math.min(100, Math.round(r.rms * 700));
+    meter.style.width = pct + '%';
+    meter.classList.toggle('hot', pct > 85);
+
+    // trace (all tabs share the mic; only draw when tuner visible)
+    traceData.push(r.voiced ? r.midi : NaN);
+    if (traceData.length > TRACE_LEN) traceData.shift();
+
+    if (!$('#view-tuner').classList.contains('active')) return;
+
+    if (r.voiced) {
+      var near = Pitch.centsToNearestNote(r.freq);
+      $('#tuner-note').textContent = near.name;
+      $('#tuner-freq').textContent = r.freq.toFixed(1) + ' Hz';
+      var cents = near.cents;
+      $('#tuner-cents').textContent = (cents >= 0 ? '+' : '') + Math.round(cents) + ' cents';
+      var needle = $('#needle');
+      needle.style.left = (50 + (Math.max(-50, Math.min(50, cents)) / 50) * 46) + '%';
+      var zone = Math.abs(cents) <= 10 ? 'great' : Math.abs(cents) <= 25 ? 'good' : 'off';
+      $('#tuner-dial').dataset.zone = zone;
+    } else {
+      $('#tuner-note').textContent = '♪';
+      $('#tuner-freq').textContent = 'listening…';
+      $('#tuner-cents').textContent = '';
+      $('#tuner-dial').dataset.zone = 'idle';
+    }
+    drawTuner();
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Train view                                                        */
+  /* ---------------------------------------------------------------- */
+
+  function renderCatalog() {
+    var wrap = $('#exercise-list');
+    wrap.innerHTML = '';
+    var stats = store.stats();
+    Exercises.CATALOG.forEach(function (item) {
+      var s = stats.byExercise[item.id];
+      var card = el('div', 'card exercise-card');
+      card.innerHTML =
+        '<div class="ex-head"><span class="ex-title">' + item.title + '</span>' +
+        '<span class="badge">' + item.level + '</span></div>' +
+        '<p class="ex-blurb">' + item.blurb + '</p>' +
+        '<div class="ex-foot"><span class="ex-stats">' +
+        (s ? 'Best ' + s.best + ' · avg ' + s.avg + ' over ' + s.count + ' runs' : 'Not tried yet') +
+        '</span><button class="btn primary">Start</button></div>';
+      card.querySelector('button').addEventListener('click', function () { startExercise(item.id); });
+      wrap.appendChild(card);
+    });
+    var rangeNote = $('#train-range-note');
+    var hasRange = !!store.load().range;
+    rangeNote.style.display = hasRange ? 'none' : 'block';
+  }
+
+  async function startExercise(id) {
+    if (!(await ensureMic())) return;
+    var exercise = Exercises.forId(id, userRange());
+    $('#exercise-list').style.display = 'none';
+    $('#train-range-note').style.display = 'none';
+    var runner = $('#exercise-runner');
+    runner.style.display = 'block';
+    runner.innerHTML =
+      '<div class="run-head"><h3>' + exercise.title + '</h3>' +
+      '<button class="btn ghost" id="run-quit">Quit</button></div>' +
+      '<p class="run-desc">' + exercise.description + '</p>' +
+      '<div class="run-progress" id="run-progress"></div>' +
+      '<div class="run-stage">' +
+      '  <div class="run-phase" id="run-phase">Get ready…</div>' +
+      '  <div class="run-note" id="run-note">—</div>' +
+      '  <div class="run-label" id="run-label"></div>' +
+      '  <div class="cents-bar"><div class="cents-zone"></div><div class="cents-marker" id="run-marker"></div></div>' +
+      '  <div class="run-hint" id="run-hint"></div>' +
+      '</div>' +
+      '<div class="run-results" id="run-results"></div>';
+
+    var dots = exercise.notes.map(function () {
+      var d = el('span', 'dot');
+      $('#run-progress').appendChild(d);
+      return d;
+    });
+
+    $('#run-quit').addEventListener('click', function () {
+      trainer.cancel();
+      endExerciseUi();
+    });
+
+    trainer.onState = function (s) {
+      dots.forEach(function (d, i) {
+        d.className = 'dot' + (i < s.noteIndex ? ' done' : i === s.noteIndex ? ' current' : '');
+      });
+      var noteName = Pitch.midiToNoteName(s.note.midi);
+      $('#run-note').textContent = noteName;
+      $('#run-label').textContent = s.note.label || '';
+      if (s.phase === 'listen') {
+        $('#run-phase').textContent = '👂 Listen…';
+        $('#run-hint').textContent = 'Hear the note in your head.';
+      } else if (s.phase === 'ready') {
+        $('#run-phase').textContent = '🫁 Breathe in…';
+        $('#run-hint').textContent = '';
+      } else if (s.phase === 'sing') {
+        $('#run-phase').textContent = '🎤 Sing "ahh" and hold it!';
+      }
+    };
+
+    trainer.onLive = function (live) {
+      var marker = $('#run-marker');
+      if (!marker) return;
+      if (live.voiced && isFinite(live.cents)) {
+        var c = Math.max(-100, Math.min(100, live.cents));
+        marker.style.left = (50 + (c / 100) * 48) + '%';
+        marker.className = 'cents-marker ' + (Math.abs(live.cents) <= Scoring.IN_TUNE_CENTS ? 'in-tune' : 'off-tune');
+        $('#run-hint').textContent = live.cents > Scoring.IN_TUNE_CENTS ? 'A bit high — come down'
+          : live.cents < -Scoring.IN_TUNE_CENTS ? 'A bit low — lift up'
+          : 'Great — hold it!';
+      } else {
+        marker.className = 'cents-marker silent';
+      }
+    };
+
+    trainer.onNoteResult = function (res, i) {
+      var row = el('div', 'note-result ' + (res.score >= 65 ? 'ok' : res.score >= 40 ? 'meh' : 'bad'));
+      row.innerHTML = '<span>' + Pitch.midiToNoteName(res.targetMidi) + '</span>' +
+        '<span class="nr-score">' + res.score + '</span><span class="nr-fb">' + res.feedback + '</span>';
+      $('#run-results').appendChild(row);
+    };
+
+    trainer.onDone = function (total) {
+      store.addSession(exercise.id, total.score, total.stars);
+      checkAchievements();
+      if (total.stars === 3) celebrate();
+      var stars = '★★★'.slice(0, total.stars) + '☆☆☆'.slice(0, 3 - total.stars);
+      var summary = el('div', 'card run-summary');
+      summary.innerHTML = '<div class="stars">' + stars + '</div>' +
+        '<div class="final-score">' + total.score + '<span>/100</span></div>' +
+        '<p>' + (total.score >= 85 ? 'Outstanding! Try a harder exercise.' :
+                 total.score >= 65 ? 'Nice work — one more round to lock it in?' :
+                 total.heardAll ? 'Good effort. Slow, gentle repetition wins — go again!' :
+                 'We could not hear you on some notes. Check the volume meter moves when you sing.') + '</p>' +
+        '<div class="row"><button class="btn primary" id="run-again">Sing it again</button>' +
+        '<button class="btn ghost" id="run-back">Back to exercises</button></div>';
+      $('#exercise-runner').appendChild(summary);
+      $('#run-again').addEventListener('click', function () { startExercise(id); });
+      $('#run-back').addEventListener('click', endExerciseUi);
+    };
+
+    trainer.run(exercise);
+  }
+
+  function endExerciseUi() {
+    trainer.cancel();
+    $('#exercise-runner').style.display = 'none';
+    $('#exercise-runner').innerHTML = '';
+    $('#exercise-list').style.display = '';
+    renderCatalog();
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Range view                                                        */
+  /* ---------------------------------------------------------------- */
+
+  function renderRangeIntro() {
+    var r = store.load().range;
+    $('#range-current').innerHTML = r
+      ? 'Your range: <strong>' + Pitch.midiToNoteName(r.low) + ' – ' + Pitch.midiToNoteName(r.high) +
+        '</strong> (' + (r.high - r.low) + ' semitones)'
+      : 'No range measured yet — exercises use a generic comfortable range until you test.';
+  }
+
+  $('#range-start').addEventListener('click', async function () {
+    if (!(await ensureMic())) return;
+    var stage = $('#range-stage');
+    var btn = $('#range-start');
+    btn.disabled = true;
+
+    async function measure(promptHtml) {
+      stage.innerHTML = '<p class="range-prompt">' + promptHtml + '</p>' +
+        '<div class="range-live" id="range-live">—</div><div class="range-count" id="range-count"></div>';
+      // countdown
+      for (var c = 3; c >= 1; c--) {
+        $('#range-count').textContent = 'Starting in ' + c + '…';
+        await new Promise(function (res) { setTimeout(res, 800); });
+      }
+      $('#range-count').textContent = 'Sing now — hold it steady!';
+      trainer.onLive = function (live) {
+        var elLive = $('#range-live');
+        if (!elLive) return;
+        elLive.textContent = live.voiced && isFinite(live.midi) ? Pitch.midiToNoteName(live.midi) : '…';
+      };
+      return trainer.measureHeldNote(4000);
+    }
+
+    var low = await measure('Step 1 of 2 — sing your <strong>lowest comfortable</strong> note on "ahh". Not a growl — comfy and clear.');
+    if (low === null) {
+      stage.innerHTML = '<p class="range-prompt">We could not hear a steady note. Get closer to the mic and try again.</p>';
+      btn.disabled = false;
+      return;
+    }
+    var high = await measure('Step 2 of 2 — now sing your <strong>highest comfortable</strong> note. No straining!');
+    btn.disabled = false;
+    if (high === null) {
+      stage.innerHTML = '<p class="range-prompt">We could not hear the high note. Try the test again.</p>';
+      return;
+    }
+    var lowMidi = Math.round(Math.min(low, high));
+    var highMidi = Math.round(Math.max(low, high));
+    if (highMidi - lowMidi < 5) {
+      stage.innerHTML = '<p class="range-prompt">Those two notes were very close together (' +
+        Pitch.midiToNoteName(lowMidi) + ' and ' + Pitch.midiToNoteName(highMidi) +
+        '). Make the low one lower and the high one higher, then re-test.</p>';
+      return;
+    }
+    store.setRange(lowMidi, highMidi);
+    checkAchievements();
+    stage.innerHTML = '<p class="range-prompt">✅ Saved! Your range is <strong>' +
+      Pitch.midiToNoteName(lowMidi) + ' – ' + Pitch.midiToNoteName(highMidi) +
+      '</strong>. Every exercise is now tuned to your voice.</p>';
+    renderRangeIntro();
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Achievements + confetti                                           */
+  /* ---------------------------------------------------------------- */
+
+  function celebrate() {
+    var canvas = el('canvas', 'confetti');
+    document.body.appendChild(canvas);
+    var g = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = innerWidth * dpr;
+    canvas.height = innerHeight * dpr;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var colors = ['#5eead4', '#fbbf24', '#f87171', '#a78bfa', '#60a5fa'];
+    var parts = [];
+    for (var i = 0; i < 130; i++) {
+      parts.push({
+        x: innerWidth / 2 + (Math.random() - 0.5) * 160,
+        y: innerHeight * 0.35,
+        vx: (Math.random() - 0.5) * 560,
+        vy: -Math.random() * 480 - 120,
+        s: 5 + Math.random() * 6,
+        c: colors[i % colors.length],
+        rot: Math.random() * Math.PI
+      });
+    }
+    var t0 = performance.now();
+    (function frame(now) {
+      var t = (now - t0) / 1000;
+      if (t > 1.8) { canvas.remove(); return; }
+      var dt = 1 / 60;
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      parts.forEach(function (p) {
+        p.vy += 900 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += dt * 6;
+        g.save();
+        g.translate(p.x, p.y);
+        g.rotate(p.rot);
+        g.globalAlpha = Math.max(0, 1 - t / 1.8);
+        g.fillStyle = p.c;
+        g.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+        g.restore();
+      });
+      requestAnimationFrame(frame);
+    })(t0);
+  }
+
+  // Check for newly earned badges; celebrate and persist them.
+  function checkAchievements() {
+    var data = store.load();
+    data.streak = store.streak();
+    var fresh = Achievements.newUnlocks(data);
+    if (!fresh.length) return fresh;
+    store.unlockAchievements(fresh);
+    celebrate();
+    fresh.forEach(function (id, i) {
+      var b = Achievements.byId(id);
+      setTimeout(function () {
+        showToast('🏅 Achievement unlocked: ' + b.icon + ' ' + b.title + ' — ' + b.desc);
+      }, i * 2200);
+    });
+    return fresh;
+  }
+
+  function renderBadges() {
+    var grid = $('#badge-grid');
+    var have = store.load().achievements || {};
+    grid.innerHTML = '';
+    Achievements.BADGES.forEach(function (b) {
+      var unlocked = !!have[b.id];
+      var node = el('div', 'badge' + (unlocked ? ' unlocked' : ''));
+      node.innerHTML = '<div class="badge-icon">' + (unlocked ? b.icon : '🔒') + '</div>' +
+        '<div class="badge-title">' + b.title + '</div>' +
+        '<div class="badge-desc">' + b.desc + (unlocked ? ' · ' + have[b.id] : '') + '</div>';
+      grid.appendChild(node);
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Game view (Pitch Flyer)                                           */
+  /* ---------------------------------------------------------------- */
+
+  var game = null;
+
+  function renderGameIntro() {
+    var best = store.load().gameBest || 0;
+    $('#game-best-label').textContent = best > 0 ? 'Your best: ' + best : 'Fly through 5 gaps to earn your first badge!';
+  }
+
+  $('#game-play').addEventListener('click', async function () {
+    if (!(await ensureMic())) return;
+    if (!game) game = new PitchFlyer($('#game-canvas'), mic);
+    game.best = store.load().gameBest || 0;
+    game.setZone(Exercises.comfortZone(userRange()));
+    game.onGameOver = function (score) {
+      tones.blip(false);
+      store.addGameScore(score);
+      renderGameIntro();
+      checkAchievements();
+    };
+    game.start();
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Studio view                                                       */
+  /* ---------------------------------------------------------------- */
+
+  var recTimerInterval = 0;
+
+  $('#rec-toggle').addEventListener('click', async function () {
+    var btn = $('#rec-toggle');
+    if (recorder) {
+      // stop
+      clearInterval(recTimerInterval);
+      var result;
+      try { result = await recorder.stop(); }
+      catch (err) { showToast('Recording failed: ' + (err.message || err), true); recorder = null; return; }
+      recorder = null;
+      btn.textContent = '⏺ Start recording';
+      btn.classList.remove('recording');
+      var name = 'Take ' + new Date().toLocaleString();
+      try {
+        await RecordingStore.save({
+          name: name, blob: result.blob, durationMs: result.durationMs,
+          mimeType: result.mimeType, createdAt: Date.now()
+        });
+        showToast('Saved “' + name + '”. Listen back — it is the fastest way to improve!');
+        store.incrRecordings();
+        checkAchievements();
+        renderRecordings();
+      } catch (err) {
+        showToast('Could not save the recording: ' + (err.message || err), true);
+      }
+    } else {
+      if (!(await ensureMic())) return;
+      try { recorder = new Recorder(mic.stream); }
+      catch (err) { showToast(err.message, true); return; }
+      recorder.start();
+      btn.textContent = '⏹ Stop recording';
+      btn.classList.add('recording');
+      var t0 = Date.now();
+      recTimerInterval = setInterval(function () {
+        $('#rec-timer').textContent = fmtTime(Date.now() - t0);
+      }, 250);
+    }
+  });
+
+  var recordingUrls = [];
+
+  function renderRecordings() {
+    var wrap = $('#recording-list');
+    recordingUrls.forEach(function (u) { URL.revokeObjectURL(u); });
+    recordingUrls = [];
+    RecordingStore.list().then(function (items) {
+      wrap.innerHTML = items.length ? '' : '<p class="muted">No recordings yet. Hit record and sing anything you like!</p>';
+      items.forEach(function (item) {
+        var card = el('div', 'card rec-card');
+        var url = URL.createObjectURL(item.blob);
+        recordingUrls.push(url);
+        card.innerHTML = '<div class="rec-head"><span class="rec-name">' + item.name + '</span>' +
+          '<span class="rec-dur">' + fmtTime(item.durationMs) + '</span></div>';
+        var audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = url;
+        card.appendChild(audio);
+        var row = el('div', 'row');
+        var dl = el('a', 'btn ghost small', '⬇ Download');
+        dl.href = url;
+        dl.download = item.name.replace(/[^\w\- ]+/g, '') + (item.mimeType.indexOf('mp4') >= 0 ? '.m4a' : '.webm');
+        var del = el('button', 'btn ghost small danger', 'Delete');
+        del.addEventListener('click', function () {
+          RecordingStore.remove(item.id).then(renderRecordings);
+        });
+        row.appendChild(dl); row.appendChild(del);
+        card.appendChild(row);
+        wrap.appendChild(card);
+      });
+    }).catch(function (err) {
+      wrap.innerHTML = '<p class="muted">Could not load recordings: ' + (err.message || err) + '</p>';
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Progress view                                                     */
+  /* ---------------------------------------------------------------- */
+
+  function renderProgress() {
+    var stats = store.stats();
+    var streak = store.streak();
+    $('#prog-streak').textContent = streak + (streak === 1 ? ' day' : ' days');
+    $('#prog-total').textContent = stats.total;
+    var r = stats.range;
+    $('#prog-range').textContent = r ? Pitch.midiToNoteName(r.low) + '–' + Pitch.midiToNoteName(r.high) : 'not set';
+    renderBadges();
+
+    // per-exercise table
+    var tbl = $('#prog-table');
+    var rows = Exercises.CATALOG.filter(function (c) { return stats.byExercise[c.id]; });
+    tbl.innerHTML = rows.length
+      ? '<tr><th>Exercise</th><th>Runs</th><th>Average</th><th>Best</th></tr>' +
+        rows.map(function (c) {
+          var s = stats.byExercise[c.id];
+          return '<tr><td>' + c.title + '</td><td>' + s.count + '</td><td>' + s.avg + '</td><td>' + s.best + '</td></tr>';
+        }).join('')
+      : '<tr><td class="muted">Complete an exercise in the Train tab to see stats here.</td></tr>';
+
+    // 14-day chart
+    var days = store.recentDays(14);
+    var canvas = $('#prog-chart');
+    var g = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.width = canvas.clientWidth * dpr;
+    var h = canvas.height = canvas.clientHeight * dpr;
+    g.clearRect(0, 0, w, h);
+    var barW = w / days.length;
+    days.forEach(function (d, i) {
+      var x = i * barW;
+      if (d.count > 0) {
+        var bh = Math.max(4 * dpr, (d.avg / 100) * (h - 22 * dpr));
+        g.fillStyle = d.avg >= 65 ? '#5eead4' : '#fbbf24';
+        g.fillRect(x + barW * 0.18, h - 18 * dpr - bh, barW * 0.64, bh);
+      } else {
+        g.fillStyle = 'rgba(255,255,255,0.08)';
+        g.fillRect(x + barW * 0.18, h - 18 * dpr - 3 * dpr, barW * 0.64, 3 * dpr);
+      }
+      g.fillStyle = 'rgba(255,255,255,0.4)';
+      g.font = Math.round(9 * dpr) + 'px system-ui, sans-serif';
+      g.fillText(d.date.slice(8), x + barW * 0.28, h - 5 * dpr);
+    });
+  }
+
+  $('#prog-reset').addEventListener('click', function () {
+    if (confirm('Erase all progress (range, scores, streak)? Recordings are kept.')) {
+      store.reset();
+      renderProgress();
+    }
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Boot                                                              */
+  /* ---------------------------------------------------------------- */
+
+  renderLessons();
+  renderCatalog();
+  renderRangeIntro();
+  setMicUi();
+  switchTab('learn');
+
+  // Expose for the automated end-to-end test only.
+  window.__singcoach = {
+    mic: mic, store: store, trainer: trainer,
+    checkAchievements: checkAchievements,
+    getGame: function () { return game; }
+  };
+})();
+
+</script>

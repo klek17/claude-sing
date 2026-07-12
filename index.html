@@ -21,6 +21,7 @@
     <button class="tab-btn" data-tab="tuner">🎯 Tuner</button>
     <button class="tab-btn" data-tab="train">🏋️ Train</button>
     <button class="tab-btn" data-tab="range">📏 Range</button>
+    <button class="tab-btn" data-tab="game">🎈 Game</button>
     <button class="tab-btn" data-tab="studio">⏺ Studio</button>
     <button class="tab-btn" data-tab="progress">📈 Progress</button>
   </nav>
@@ -81,6 +82,20 @@
       </div>
     </section>
 
+    <!-- GAME -->
+    <section class="view" id="view-game">
+      <h2>Pitch Flyer 🎈</h2>
+      <p class="intro">Steer the balloon with your voice — sing higher to float up, lower to sink,
+        and fly through the gaps. Sneaky pitch-control training disguised as an arcade game.</p>
+      <div class="card">
+        <canvas id="game-canvas"></canvas>
+        <div class="row">
+          <button class="btn primary" id="game-play">▶ Play</button>
+          <span class="muted" id="game-best-label"></span>
+        </div>
+      </div>
+    </section>
+
     <!-- STUDIO -->
     <section class="view" id="view-studio">
       <h2>Recording studio</h2>
@@ -105,6 +120,10 @@
         <canvas id="prog-chart"></canvas>
       </div>
       <div class="card">
+        <h3 class="card-title">🏆 Achievements</h3>
+        <div id="badge-grid"></div>
+      </div>
+      <div class="card">
         <table id="prog-table"></table>
       </div>
       <div class="row"><button class="btn ghost small danger" id="prog-reset">Reset progress</button></div>
@@ -118,9 +137,11 @@
   <script src="js/exercises.js"></script>
   <script src="js/lessons.js"></script>
   <script src="js/progress.js"></script>
+  <script src="js/achievements.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/recorder.js"></script>
   <script src="js/trainer.js"></script>
+  <script src="js/game.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

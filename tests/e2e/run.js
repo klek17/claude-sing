@@ -82,7 +82,7 @@ async function main() {
       await page.locator('#lesson-list .lesson:first-child').evaluate(n => n.classList.contains('open') && n.classList.contains('read')));
 
     /* ---- tab switching ---- */
-    for (const tab of ['tuner', 'train', 'range', 'studio', 'progress', 'learn']) {
+    for (const tab of ['tuner', 'train', 'range', 'game', 'studio', 'progress', 'learn']) {
       await page.click(`.tab-btn[data-tab="${tab}"]`);
       const visible = await page.locator(`#view-${tab}`).evaluate(n => n.classList.contains('active'));
       check(`tab "${tab}" activates`, visible);
@@ -123,6 +123,50 @@ async function main() {
     await page.click('#run-quit');
     check('quitting returns to catalog',
       await page.locator('#exercise-list').evaluate(n => n.style.display !== 'none'));
+
+    /* ---- Pitch Flyer game ---- */
+    await page.click('.tab-btn[data-tab="game"]');
+    await page.click('#game-play');
+    await page.waitForFunction(() => {
+      const g = window.__singcoach.getGame();
+      return g && (g.state === 'countdown' || g.state === 'playing');
+    }, null, { timeout: 8000 });
+    check('game starts with countdown', true);
+    await page.waitForFunction(() => {
+      const g = window.__singcoach.getGame();
+      return g.state === 'playing' || g.state === 'over';
+    }, null, { timeout: 10000 });
+    check('game transitions to playing', true);
+    await page.waitForTimeout(1500);
+    const gameAlive = await page.evaluate(() => {
+      const g = window.__singcoach.getGame();
+      return { state: g.state, walls: g.walls.length >= 0, zone: g.zoneHigh > g.zoneLow };
+    });
+    check('game world is running with a valid pitch zone', gameAlive.zone && gameAlive.walls);
+    // Leaving the tab must stop the game loop.
+    await page.click('.tab-btn[data-tab="learn"]');
+    const stopped = await page.evaluate(() => window.__singcoach.getGame().state === 'idle');
+    check('game stops when leaving the tab', stopped);
+
+    /* ---- achievements ---- */
+    const unlocked = await page.evaluate(() => {
+      window.__singcoach.store.addSession('scale-5', 92, 3);
+      return window.__singcoach.checkAchievements();
+    });
+    check('achievements unlock on qualifying results',
+      unlocked.includes('first-note') && unlocked.includes('triple-star') && unlocked.includes('high-scorer'),
+      `got ${JSON.stringify(unlocked)}`);
+    const repeat = await page.evaluate(() => window.__singcoach.checkAchievements());
+    check('achievements are not re-awarded', repeat.length === 0, `got ${JSON.stringify(repeat)}`);
+    await page.click('.tab-btn[data-tab="progress"]');
+    const badgeInfo = await page.evaluate(() => ({
+      total: document.querySelectorAll('#badge-grid .badge').length,
+      unlocked: document.querySelectorAll('#badge-grid .badge.unlocked').length
+    }));
+    check('badge grid renders all badges', badgeInfo.total === 17, `got ${badgeInfo.total}`);
+    check('unlocked badges are highlighted', badgeInfo.unlocked >= 3, `got ${badgeInfo.unlocked}`);
+    // clean slate for the progress assertions below
+    await page.evaluate(() => window.__singcoach.store.reset());
 
     /* ---- recording studio ---- */
     await page.click('.tab-btn[data-tab="studio"]');
