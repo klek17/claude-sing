@@ -21,6 +21,7 @@
     <button class="tab-btn" data-tab="tuner">🎯 Tuner</button>
     <button class="tab-btn" data-tab="train">🏋️ Train</button>
     <button class="tab-btn" data-tab="range">📏 Range</button>
+    <button class="tab-btn" data-tab="song">🎵 Song</button>
     <button class="tab-btn" data-tab="game">🎈 Game</button>
     <button class="tab-btn" data-tab="studio">⏺ Studio</button>
     <button class="tab-btn" data-tab="progress">📈 Progress</button>
@@ -82,6 +83,53 @@
       </div>
     </section>
 
+    <!-- SONG -->
+    <section class="view" id="view-song">
+      <h2 id="song-title">Song Trainer</h2>
+      <p class="intro">A complete practice program for <strong>Breakeven — The Script</strong>: drills for
+        exactly what this song demands, and a take analyser that scores you singing along with the real
+        track. Play the song in headphones from your music app (lyrics from there too — we don't bundle
+        them), sing out loud, and record takes here until you're stage ready.</p>
+
+      <div class="card" id="song-profile"></div>
+
+      <div class="card">
+        <h3 class="card-title">🏋️ Song drills</h3>
+        <p class="muted" style="margin-bottom:10px;">Personalised to your practice key. Run each until it feels easy.</p>
+        <div class="row">
+          <button class="btn primary" id="drill-sustains">Top-Note Sustains</button>
+          <button class="btn primary" id="drill-leaps">Chorus Leaps</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🌬️ Breath Trainer</h3>
+        <p class="muted" style="margin-bottom:10px;">Breakeven's phrases are long. Inhale low, then hold an even,
+          audible "sss" or "ahh" as long as you can. 20+ seconds is the goal.</p>
+        <div class="row" style="align-items:center;">
+          <button class="btn primary" id="breath-start">Start</button>
+          <span id="breath-live" class="muted">best: —</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">⏺ Sing-along take analyser</h3>
+        <p class="muted" style="margin-bottom:10px;">Start the song in your headphones, press record, and sing the
+          whole thing (or just the chorus). Stop to get your readiness score.</p>
+        <div class="row" style="align-items:center;">
+          <button class="btn primary" id="take-toggle">⏺ Record a take</button>
+          <span id="take-timer" class="muted"></span>
+        </div>
+        <div id="take-result"></div>
+        <div id="take-history"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">📖 How to sing it well</h3>
+        <div id="song-guide"></div>
+      </div>
+    </section>
+
     <!-- GAME -->
     <section class="view" id="view-game">
       <h2>Pitch Flyer 🎈</h2>
@@ -138,6 +186,7 @@
   <script src="js/lessons.js"></script>
   <script src="js/progress.js"></script>
   <script src="js/achievements.js"></script>
+  <script src="js/songs.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/recorder.js"></script>
   <script src="js/trainer.js"></script>

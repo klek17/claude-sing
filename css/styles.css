@@ -241,6 +241,18 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
 .badge-title { font-weight: 700; font-size: 0.85rem; margin-top: 4px; }
 .badge-desc { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
 
+/* Song trainer */
+.take-score { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 10px; }
+.ts-num { font-size: 3rem; font-weight: 800; color: var(--accent); }
+.ts-lbl { color: var(--muted); }
+.take-meter { display: grid; grid-template-columns: 130px 1fr 48px; gap: 10px; align-items: center; margin-top: 8px; }
+.tm-label { color: var(--muted); font-size: 0.85rem; }
+.tm-bar { height: 10px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; }
+.tm-fill { height: 100%; background: var(--accent-dark); border-radius: 999px; }
+.tm-val { font-size: 0.85rem; text-align: right; font-variant-numeric: tabular-nums; }
+.tm-hint { color: var(--muted); font-size: 0.78rem; margin: 2px 0 0 140px; }
+@media (max-width: 560px) { .tm-hint { margin-left: 0; } }
+
 /* Confetti overlay */
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }
 

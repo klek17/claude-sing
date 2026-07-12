@@ -51,8 +51,30 @@
     { id: 'game-ace', icon: '🕹️', title: 'Arcade Ace', desc: 'Score 15 in Pitch Flyer',
       check: function (d) { return (d.gameBest || 0) >= 15; } },
     { id: 'game-legend', icon: '👑', title: 'Pitch Royalty', desc: 'Score 30 in Pitch Flyer',
-      check: function (d) { return (d.gameBest || 0) >= 30; } }
+      check: function (d) { return (d.gameBest || 0) >= 30; } },
+    { id: 'song-take', icon: '🎼', title: 'Cover Artist', desc: 'Record and analyse a song take',
+      check: function (d) { return songTakeCount(d) >= 1; } },
+    { id: 'song-grind', icon: '🎚️', title: 'Take Ten', desc: 'Record 10 song takes',
+      check: function (d) { return songTakeCount(d) >= 10; } },
+    { id: 'song-ready', icon: '🌟', title: 'Stage Ready', desc: 'Reach 80+ readiness on a song',
+      check: function (d) { return bestSongReadiness(d) >= 80; } },
+    { id: 'breath-20', icon: '🌬️', title: 'Deep Well', desc: 'Hold a steady breath sound for 20 seconds',
+      check: function (d) { return (d.bestHissSec || 0) >= 20; } }
   ];
+
+  function songTakeCount(d) {
+    var songs = (d && d.songs) || {};
+    var n = 0;
+    Object.keys(songs).forEach(function (k) { n += (songs[k].takes || []).length; });
+    return n;
+  }
+
+  function bestSongReadiness(d) {
+    var songs = (d && d.songs) || {};
+    var best = 0;
+    Object.keys(songs).forEach(function (k) { if ((songs[k].best || 0) > best) best = songs[k].best; });
+    return best;
+  }
 
   function evaluate(data) {
     return BADGES.filter(function (b) {

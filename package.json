@@ -1,6 +1,6 @@
 {
   "name": "singcoach",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "SingCoach — learn to sing with real-time microphone feedback, guided exercises and a recording studio.",
   "private": true,
   "scripts": {

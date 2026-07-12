@@ -248,6 +248,18 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
 .badge-title { font-weight: 700; font-size: 0.85rem; margin-top: 4px; }
 .badge-desc { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
 
+/* Song trainer */
+.take-score { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 10px; }
+.ts-num { font-size: 3rem; font-weight: 800; color: var(--accent); }
+.ts-lbl { color: var(--muted); }
+.take-meter { display: grid; grid-template-columns: 130px 1fr 48px; gap: 10px; align-items: center; margin-top: 8px; }
+.tm-label { color: var(--muted); font-size: 0.85rem; }
+.tm-bar { height: 10px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; }
+.tm-fill { height: 100%; background: var(--accent-dark); border-radius: 999px; }
+.tm-val { font-size: 0.85rem; text-align: right; font-variant-numeric: tabular-nums; }
+.tm-hint { color: var(--muted); font-size: 0.78rem; margin: 2px 0 0 140px; }
+@media (max-width: 560px) { .tm-hint { margin-left: 0; } }
+
 /* Confetti overlay */
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }
 
@@ -285,6 +297,7 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
     <button class="tab-btn" data-tab="tuner">🎯 Tuner</button>
     <button class="tab-btn" data-tab="train">🏋️ Train</button>
     <button class="tab-btn" data-tab="range">📏 Range</button>
+    <button class="tab-btn" data-tab="song">🎵 Song</button>
     <button class="tab-btn" data-tab="game">🎈 Game</button>
     <button class="tab-btn" data-tab="studio">⏺ Studio</button>
     <button class="tab-btn" data-tab="progress">📈 Progress</button>
@@ -343,6 +356,53 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
         <p id="range-current"></p>
         <div id="range-stage"></div>
         <div class="row"><button class="btn primary" id="range-start">Start range test</button></div>
+      </div>
+    </section>
+
+    <!-- SONG -->
+    <section class="view" id="view-song">
+      <h2 id="song-title">Song Trainer</h2>
+      <p class="intro">A complete practice program for <strong>Breakeven — The Script</strong>: drills for
+        exactly what this song demands, and a take analyser that scores you singing along with the real
+        track. Play the song in headphones from your music app (lyrics from there too — we don't bundle
+        them), sing out loud, and record takes here until you're stage ready.</p>
+
+      <div class="card" id="song-profile"></div>
+
+      <div class="card">
+        <h3 class="card-title">🏋️ Song drills</h3>
+        <p class="muted" style="margin-bottom:10px;">Personalised to your practice key. Run each until it feels easy.</p>
+        <div class="row">
+          <button class="btn primary" id="drill-sustains">Top-Note Sustains</button>
+          <button class="btn primary" id="drill-leaps">Chorus Leaps</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🌬️ Breath Trainer</h3>
+        <p class="muted" style="margin-bottom:10px;">Breakeven's phrases are long. Inhale low, then hold an even,
+          audible "sss" or "ahh" as long as you can. 20+ seconds is the goal.</p>
+        <div class="row" style="align-items:center;">
+          <button class="btn primary" id="breath-start">Start</button>
+          <span id="breath-live" class="muted">best: —</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">⏺ Sing-along take analyser</h3>
+        <p class="muted" style="margin-bottom:10px;">Start the song in your headphones, press record, and sing the
+          whole thing (or just the chorus). Stop to get your readiness score.</p>
+        <div class="row" style="align-items:center;">
+          <button class="btn primary" id="take-toggle">⏺ Record a take</button>
+          <span id="take-timer" class="muted"></span>
+        </div>
+        <div id="take-result"></div>
+        <div id="take-history"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">📖 How to sing it well</h3>
+        <div id="song-guide"></div>
       </div>
     </section>
 
@@ -949,7 +1009,9 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
         lessonsRead: {},             // { lessonId: true }
         achievements: {},            // { badgeId: unlockDate }
         gameBest: 0,                 // best Pitch Flyer score
-        recordingCount: 0            // total recordings ever saved
+        recordingCount: 0,           // total recordings ever saved
+        bestHissSec: 0,              // longest steady breath (seconds)
+        songs: {}                    // { songId: { offset, best, takes: [...] } }
       };
     }
 
@@ -1002,6 +1064,29 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
       unlockAchievements: function (ids, now) {
         var d = load();
         ids.forEach(function (id) { d.achievements[id] = todayStr(now); });
+        return save(d);
+      },
+      setBestHiss: function (sec) {
+        var d = load();
+        if (sec > d.bestHissSec) d.bestHissSec = sec;
+        return save(d);
+      },
+      song: function (songId) {
+        var d = load();
+        return d.songs[songId] || { offset: null, best: 0, takes: [] };
+      },
+      setSongOffset: function (songId, offset) {
+        var d = load();
+        var s = d.songs[songId] || (d.songs[songId] = { offset: null, best: 0, takes: [] });
+        s.offset = offset;
+        return save(d);
+      },
+      addSongTake: function (songId, readiness, now) {
+        var d = load();
+        var s = d.songs[songId] || (d.songs[songId] = { offset: null, best: 0, takes: [] });
+        s.takes.push({ date: todayStr(now), readiness: readiness });
+        if (s.takes.length > 100) s.takes = s.takes.slice(-100);
+        if (readiness > s.best) s.best = readiness;
         return save(d);
       },
       markLessonRead: function (lessonId) {
@@ -1121,8 +1206,30 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
     { id: 'game-ace', icon: '🕹️', title: 'Arcade Ace', desc: 'Score 15 in Pitch Flyer',
       check: function (d) { return (d.gameBest || 0) >= 15; } },
     { id: 'game-legend', icon: '👑', title: 'Pitch Royalty', desc: 'Score 30 in Pitch Flyer',
-      check: function (d) { return (d.gameBest || 0) >= 30; } }
+      check: function (d) { return (d.gameBest || 0) >= 30; } },
+    { id: 'song-take', icon: '🎼', title: 'Cover Artist', desc: 'Record and analyse a song take',
+      check: function (d) { return songTakeCount(d) >= 1; } },
+    { id: 'song-grind', icon: '🎚️', title: 'Take Ten', desc: 'Record 10 song takes',
+      check: function (d) { return songTakeCount(d) >= 10; } },
+    { id: 'song-ready', icon: '🌟', title: 'Stage Ready', desc: 'Reach 80+ readiness on a song',
+      check: function (d) { return bestSongReadiness(d) >= 80; } },
+    { id: 'breath-20', icon: '🌬️', title: 'Deep Well', desc: 'Hold a steady breath sound for 20 seconds',
+      check: function (d) { return (d.bestHissSec || 0) >= 20; } }
   ];
+
+  function songTakeCount(d) {
+    var songs = (d && d.songs) || {};
+    var n = 0;
+    Object.keys(songs).forEach(function (k) { n += (songs[k].takes || []).length; });
+    return n;
+  }
+
+  function bestSongReadiness(d) {
+    var songs = (d && d.songs) || {};
+    var best = 0;
+    Object.keys(songs).forEach(function (k) { if ((songs[k].best || 0) > best) best = songs[k].best; });
+    return best;
+  }
 
   function evaluate(data) {
     return BADGES.filter(function (b) {
@@ -1145,6 +1252,205 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
 
   if (typeof module !== 'undefined' && module.exports) module.exports = Achievements;
   else global.Achievements = Achievements;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * SingCoach song trainer engine — pure logic, shared with Node tests.
+ *
+ * A song profile stores only facts (key, tempo, range) and original coaching
+ * text — no lyrics and no melody transcription. The user sings along with
+ * their own copy of the track; the app analyses their voice.
+ */
+(function (global) {
+  'use strict';
+
+  var Pitch = global.Pitch || (typeof require === 'function' ? require('./pitch.js') : null);
+  var Exercises = global.Exercises || (typeof require === 'function' ? require('./exercises.js') : null);
+
+  var MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11];
+
+  /*
+   * Breakeven — The Script. Key/tempo/range are approximate, widely reported
+   * facts; the profile is a starting point and the practice key is adjustable.
+   * MIDI: C#3 = 49, F#4 = 66.
+   */
+  var BREAKEVEN = {
+    id: 'breakeven',
+    title: 'Breakeven',
+    artist: 'The Script',
+    keyRoot: 6,            // F# (pitch class)
+    major: true,
+    tempo: 94,             // approx BPM
+    range: { low: 49, high: 66 },  // approx C#3–F#4
+    demands: [
+      'Sustained notes at the very top of the range in every chorus',
+      'Leaps from low verse notes up to high chorus notes',
+      'Long phrases with few places to breathe',
+      'Staying relaxed (not shouty) on repeated high passages'
+    ],
+    guide: [
+      { title: 'Learn it in sections', text: 'Master the first verse alone, then the chorus alone, before singing the whole song. The chorus is the hard part — give it 70% of your practice time.' },
+      { title: 'The chorus lives at your top', text: 'The chorus sits near the highest note of the song and repeats it a lot. Use the Top-Note Sustains drill until that pitch feels easy, not like a reach. If it always strains, lower the practice key — great singers transpose all the time.' },
+      { title: 'Breathe like a swimmer', text: 'Phrases are long. Plan your breaths: take a low, silent belly breath at every comma-sized gap, not a last-second gasp. The Breath Trainer below builds the tank you need.' },
+      { title: 'Lighten up, don’t push', text: 'The high repeated notes should feel light and forward (like calling "hey!" across a street), never like shouting. If your throat tightens, sing the passage on "woo" first, then add words back in.' },
+      { title: 'Record, listen, repeat', text: 'Sing along with the track in headphones, record a take here, and read the analysis. Fix the weakest number, then take another. Three focused takes beat twenty careless ones.' }
+    ]
+  };
+
+  var SONGS = [BREAKEVEN];
+
+  function songById(id) {
+    for (var i = 0; i < SONGS.length; i++) if (SONGS[i].id === id) return SONGS[i];
+    return null;
+  }
+
+  // Pitch classes of the (major) scale for a practice key.
+  function scaleClasses(root) {
+    return MAJOR_SCALE.map(function (s) { return (root + s) % 12; });
+  }
+
+  /*
+   * Recommend a semitone offset that moves the song into the user's range,
+   * leaving one semitone of headroom at the top. Returns { offset, fits }.
+   * When the user's range is too narrow to fit the whole song, the offset
+   * still protects the top (the chorus) and fits=false.
+   */
+  function recommendOffset(songRange, userRange) {
+    var maxOff = userRange.high - 1 - songRange.high; // top must fit w/ headroom
+    var minOff = userRange.low - songRange.low;       // bottom must fit
+    if (minOff <= maxOff) {
+      // Feasible: choose the offset closest to zero (stay near the original key).
+      var offset = Math.max(minOff, Math.min(maxOff, 0));
+      return { offset: offset, fits: true };
+    }
+    // Infeasible: protect the chorus top, let low verse notes fall where they may.
+    return { offset: Math.max(-12, Math.min(12, maxOff)), fits: false };
+  }
+
+  // "F# major" style name for the practice key after an offset.
+  function practiceKeyName(profile, offset) {
+    var root = ((profile.keyRoot + offset) % 12 + 12) % 12;
+    return Pitch.NOTE_NAMES[root] + ' major';
+  }
+
+  /*
+   * Analyse one sing-along take.
+   * midis: array of detected MIDI floats (voiced frames only).
+   * Returns null when there is not enough voice to judge.
+   */
+  function analyzeTake(midis, profile, offset) {
+    var voiced = (midis || []).filter(isFinite);
+    if (voiced.length < 40) return null; // ~1s of singing minimum
+
+    var classes = scaleClasses(((profile.keyRoot + offset) % 12 + 12) % 12);
+    var inKey = 0;
+    var absCents = [];
+    var lo = Infinity, hi = -Infinity;
+    voiced.forEach(function (m) {
+      var nearest = Math.round(m);
+      absCents.push(Math.abs(m - nearest) * 100);
+      if (classes.indexOf(((nearest % 12) + 12) % 12) >= 0) inKey++;
+      if (m < lo) lo = m;
+      if (m > hi) hi = m;
+    });
+
+    var inKeyPct = inKey / voiced.length;
+
+    // How much of the song's (transposed) range did the singer actually use?
+    var songLo = profile.range.low + offset, songHi = profile.range.high + offset;
+    var overlap = Math.min(hi, songHi) - Math.max(lo, songLo);
+    var coverage = Math.max(0, Math.min(1, overlap / (songHi - songLo)));
+    var hitTop = hi >= songHi - 0.5;
+
+    absCents.sort(function (a, b) { return a - b; });
+    var medAbs = absCents[Math.floor(absCents.length / 2)];
+    var stability = Math.max(0, 1 - medAbs / 60);
+
+    var readiness = Math.round(100 * (0.45 * inKeyPct + 0.30 * coverage + 0.25 * stability));
+
+    return {
+      voicedCount: voiced.length,
+      inKeyPct: inKeyPct,
+      coverage: coverage,
+      hitTop: hitTop,
+      lowest: Math.round(lo),
+      highest: Math.round(hi),
+      medianAbsCents: medAbs,
+      stability: stability,
+      readiness: readiness
+    };
+  }
+
+  // Coaching feedback for the weakest part of a take.
+  function takeFeedback(a, profile, offset) {
+    if (!a) return 'We could not hear enough singing. Headphones on, track up, and sing out!';
+    var topName = Pitch.midiToNoteName(profile.range.high + offset);
+    if (a.readiness >= 80) return 'Stage ready! This take sounds confident — keep it warm with a run-through every day.';
+    var weakest = Math.min(a.inKeyPct, a.coverage, a.stability);
+    if (weakest === a.coverage) {
+      return a.hitTop
+        ? 'You touched the top but spent little time in the chorus zone. Loop the chorus a few times, then take again.'
+        : 'You never reached the song’s top note (' + topName + '). Run the Top-Note Sustains drill, or lower the practice key a step.';
+    }
+    if (weakest === a.inKeyPct) {
+      return 'Quite a few notes landed outside the key. Slow down: hum the melody with the track once before singing words.';
+    }
+    return 'Your pitch wobbles as you hold notes. More breath support — do the Breath Trainer, then sustain each long note on "ahh".';
+  }
+
+  /* --- Drill generators (personalised to the practice key + user range) --- */
+
+  // Three sustains climbing to the song's (transposed) top note.
+  function topNoteSustains(profile, offset, userRange) {
+    var r = Exercises.clampRange(userRange);
+    var top = Math.min(profile.range.high + offset, r.high);
+    var notes = [top - 4, top - 2, top].map(function (m, i) {
+      return { midi: Math.max(r.low, m), holdMs: 4000, label: i === 2 ? 'Top note!' : 'Step ' + (i + 1) };
+    });
+    return {
+      id: 'song-sustains',
+      title: 'Top-Note Sustains',
+      description: 'Climb to the chorus top note and hold each step long and steady.',
+      notes: notes
+    };
+  }
+
+  // Verse-to-chorus style leaps: low anchor up to the top zone and back.
+  function chorusLeaps(profile, offset, userRange) {
+    var r = Exercises.clampRange(userRange);
+    var top = Math.min(profile.range.high + offset, r.high);
+    var leap = top - 7 >= r.low ? 7 : 5; // prefer a fifth, shrink if needed
+    var base = Math.max(r.low, top - leap);
+    var notes = [];
+    for (var i = 0; i < 3; i++) {
+      notes.push({ midi: base, holdMs: 1500, label: 'Low anchor' });
+      notes.push({ midi: top, holdMs: 2200, label: 'Leap up!' });
+    }
+    return {
+      id: 'song-leaps',
+      title: 'Chorus Leaps',
+      description: 'Jump cleanly from a low anchor note up to the chorus top — no sliding, no strain.',
+      notes: notes
+    };
+  }
+
+  var Songs = {
+    SONGS: SONGS,
+    BREAKEVEN: BREAKEVEN,
+    songById: songById,
+    scaleClasses: scaleClasses,
+    recommendOffset: recommendOffset,
+    practiceKeyName: practiceKeyName,
+    analyzeTake: analyzeTake,
+    takeFeedback: takeFeedback,
+    topNoteSustains: topNoteSustains,
+    chorusLeaps: chorusLeaps
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Songs;
+  else global.Songs = Songs;
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -1930,6 +2236,7 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
     if (name === 'train') renderCatalog();
     if (name === 'range') renderRangeIntro();
     if (name === 'game') renderGameIntro();
+    if (name === 'song') renderSong();
     if (name !== 'game' && game) game.stop(); // don't run the game loop off-screen
   }
 
@@ -2086,9 +2393,12 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
     rangeNote.style.display = hasRange ? 'none' : 'block';
   }
 
-  async function startExercise(id) {
+  // Accepts a catalog id or a ready-made exercise object (song drills).
+  async function startExercise(idOrExercise) {
     if (!(await ensureMic())) return;
-    var exercise = Exercises.forId(id, userRange());
+    var exercise = typeof idOrExercise === 'string'
+      ? Exercises.forId(idOrExercise, userRange())
+      : idOrExercise;
     $('#exercise-list').style.display = 'none';
     $('#train-range-note').style.display = 'none';
     var runner = $('#exercise-runner');
@@ -2173,7 +2483,7 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
         '<div class="row"><button class="btn primary" id="run-again">Sing it again</button>' +
         '<button class="btn ghost" id="run-back">Back to exercises</button></div>';
       $('#exercise-runner').appendChild(summary);
-      $('#run-again').addEventListener('click', function () { startExercise(id); });
+      $('#run-again').addEventListener('click', function () { startExercise(idOrExercise); });
       $('#run-back').addEventListener('click', endExerciseUi);
     };
 
@@ -2328,6 +2638,218 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
         '<div class="badge-desc">' + b.desc + (unlocked ? ' · ' + have[b.id] : '') + '</div>';
       grid.appendChild(node);
     });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Song trainer (Breakeven)                                          */
+  /* ---------------------------------------------------------------- */
+
+  var SONG = Songs.BREAKEVEN;
+
+  function songOffset() {
+    var saved = store.song(SONG.id).offset;
+    if (saved !== null && saved !== undefined) return saved;
+    return Songs.recommendOffset(SONG.range, userRange()).offset;
+  }
+
+  function renderSong() {
+    renderSongProfile();
+    renderSongGuide();
+    renderTakeHistory();
+    renderBreathBest();
+  }
+
+  function renderSongProfile() {
+    var offset = songOffset();
+    var rec = Songs.recommendOffset(SONG.range, userRange());
+    var r = userRange();
+    var hasRange = !!store.load().range;
+    var lo = SONG.range.low + offset, hi = SONG.range.high + offset;
+    var html =
+      '<h3 class="card-title">🎤 ' + SONG.title + ' — ' + SONG.artist + '</h3>' +
+      '<p class="muted">Original key ≈ ' + Songs.practiceKeyName(SONG, 0) + ' · tempo ≈ ' + SONG.tempo +
+      ' BPM · needs roughly ' + Pitch.midiToNoteName(SONG.range.low) + '–' + Pitch.midiToNoteName(SONG.range.high) +
+      ' (all approximate).</p>' +
+      '<p style="margin-top:8px;">Practice key: <strong>' + Songs.practiceKeyName(SONG, offset) + '</strong>' +
+      (offset !== 0 ? ' (' + (offset > 0 ? '+' : '') + offset + ' semitones)' : ' (original)') +
+      ' → you’ll need <strong>' + Pitch.midiToNoteName(lo) + '–' + Pitch.midiToNoteName(hi) + '</strong>. ' +
+      (hasRange
+        ? 'Your range: <strong>' + Pitch.midiToNoteName(r.low) + '–' + Pitch.midiToNoteName(r.high) + '</strong>. ' +
+          (rec.fits
+            ? (hi <= r.high - 1 && lo >= r.low ? '✅ Fits your voice.' : '⚠️ Current key strains your range — press Reset for the recommended key.')
+            : '⚠️ The full song spans more than your measured range — the key below protects the chorus; sing the lowest verse notes an octave up, and re-test your range as it grows.')
+        : '💡 Do the 30-second test in the Range tab so this can be tuned to your voice.') +
+      '</p>' +
+      '<div class="row">' +
+      '<button class="btn ghost small" id="song-key-down">♭ Lower key</button>' +
+      '<button class="btn ghost small" id="song-key-reset">Reset to recommended</button>' +
+      '<button class="btn ghost small" id="song-key-up">♯ Raise key</button>' +
+      '</div>' +
+      '<p class="muted" style="margin-top:10px;">What this song demands: ' + SONG.demands.join(' · ') + '.</p>';
+    var card = $('#song-profile');
+    card.innerHTML = html;
+    $('#song-key-down').addEventListener('click', function () { store.setSongOffset(SONG.id, Math.max(-12, songOffset() - 1)); renderSongProfile(); });
+    $('#song-key-up').addEventListener('click', function () { store.setSongOffset(SONG.id, Math.min(12, songOffset() + 1)); renderSongProfile(); });
+    $('#song-key-reset').addEventListener('click', function () { store.setSongOffset(SONG.id, Songs.recommendOffset(SONG.range, userRange()).offset); renderSongProfile(); });
+  }
+
+  function renderSongGuide() {
+    $('#song-guide').innerHTML = SONG.guide.map(function (g) {
+      return '<p style="margin-bottom:10px;"><strong>' + g.title + '.</strong> <span class="muted">' + g.text + '</span></p>';
+    }).join('');
+  }
+
+  $('#drill-sustains').addEventListener('click', function () {
+    switchTab('train');
+    startExercise(Songs.topNoteSustains(SONG, songOffset(), userRange()));
+  });
+  $('#drill-leaps').addEventListener('click', function () {
+    switchTab('train');
+    startExercise(Songs.chorusLeaps(SONG, songOffset(), userRange()));
+  });
+
+  /* --- Breath trainer --- */
+
+  var breathRunning = false;
+
+  function renderBreathBest() {
+    if (breathRunning) return;
+    var best = store.load().bestHissSec || 0;
+    $('#breath-live').textContent = best > 0 ? 'best: ' + best.toFixed(1) + 's' : 'best: —';
+  }
+
+  $('#breath-start').addEventListener('click', async function () {
+    if (breathRunning || !(await ensureMic())) return;
+    breathRunning = true;
+    var btn = $('#breath-start');
+    btn.disabled = true;
+    var live = $('#breath-live');
+    for (var c = 3; c >= 1; c--) {
+      live.textContent = 'Breathe in… ' + c;
+      await new Promise(function (res) { setTimeout(res, 800); });
+    }
+    live.textContent = 'Go — steady "sss"!';
+
+    var longest = 0, current = 0, lastLoud = 0, started = false;
+    var t0 = performance.now();
+    var unsub = mic.onReading(function (r) {
+      var now = performance.now();
+      var loud = r.rms > 0.01;
+      if (loud) {
+        if (!started) { started = true; current = 0; }
+        else if (now - lastLoud < 400) current += now - lastLoud;
+        lastLoud = now;
+        if (current > longest) longest = current;
+        live.textContent = (current / 1000).toFixed(1) + 's — keep it even!';
+      }
+      // End: 35s cap, or 1.5s of silence after having started.
+      var done = now - t0 > 35000 || (started && now - lastLoud > 1500);
+      if (done) {
+        unsub();
+        breathRunning = false;
+        btn.disabled = false;
+        var sec = longest / 1000;
+        if (sec > 0.5) {
+          store.setBestHiss(Math.round(sec * 10) / 10);
+          var best = store.load().bestHissSec;
+          live.textContent = sec.toFixed(1) + 's! ' + (sec >= 20 ? '🌬️ Singer-grade lungs!' : 'Best: ' + best.toFixed(1) + 's — beat it tomorrow.');
+          checkAchievements();
+        } else {
+          live.textContent = 'We didn’t hear a steady sound — closer to the mic and try again.';
+        }
+      }
+    });
+  });
+
+  /* --- Sing-along take analyser --- */
+
+  var takeRecorder = null;
+  var takeMidis = null;
+  var takeUnsub = null;
+  var takeTimerInterval = 0;
+
+  $('#take-toggle').addEventListener('click', async function () {
+    var btn = $('#take-toggle');
+    if (takeRecorder) {
+      // stop + analyse
+      clearInterval(takeTimerInterval);
+      if (takeUnsub) { takeUnsub(); takeUnsub = null; }
+      var result = null;
+      try { result = await takeRecorder.stop(); }
+      catch (err) { showToast('Recording failed: ' + (err.message || err), true); }
+      takeRecorder = null;
+      btn.textContent = '⏺ Record a take';
+      btn.classList.remove('recording');
+      $('#take-timer').textContent = '';
+
+      var analysis = Songs.analyzeTake(takeMidis, SONG, songOffset());
+      renderTakeResult(analysis);
+      if (analysis) {
+        store.addSongTake(SONG.id, analysis.readiness);
+        if (result) {
+          try {
+            await RecordingStore.save({
+              name: SONG.title + ' take ' + new Date().toLocaleString(),
+              blob: result.blob, durationMs: result.durationMs,
+              mimeType: result.mimeType, createdAt: Date.now()
+            });
+            store.incrRecordings();
+          } catch (e) { /* keep the analysis even if saving audio fails */ }
+        }
+        if (analysis.readiness >= 80) celebrate();
+        checkAchievements();
+        renderTakeHistory();
+      }
+    } else {
+      if (!(await ensureMic())) return;
+      try { takeRecorder = new Recorder(mic.stream); }
+      catch (err) { showToast(err.message, true); return; }
+      takeMidis = [];
+      takeUnsub = mic.onReading(function (r) { if (r.voiced) takeMidis.push(r.midi); });
+      takeRecorder.start();
+      btn.textContent = '⏹ Stop & analyse';
+      btn.classList.add('recording');
+      $('#take-result').innerHTML = '';
+      var t0 = Date.now();
+      takeTimerInterval = setInterval(function () {
+        $('#take-timer').textContent = fmtTime(Date.now() - t0) + ' — sing along with the track!';
+      }, 250);
+    }
+  });
+
+  function meterRow(label, pct, hint) {
+    return '<div class="take-meter"><span class="tm-label">' + label + '</span>' +
+      '<div class="tm-bar"><div class="tm-fill" style="width:' + Math.round(pct * 100) + '%"></div></div>' +
+      '<span class="tm-val">' + Math.round(pct * 100) + '%</span></div>' +
+      (hint ? '<div class="tm-hint">' + hint + '</div>' : '');
+  }
+
+  function renderTakeResult(a) {
+    var box = $('#take-result');
+    if (!a) {
+      box.innerHTML = '<p class="muted" style="margin-top:12px;">' + Songs.takeFeedback(null, SONG, songOffset()) + '</p>';
+      return;
+    }
+    var offset = songOffset();
+    box.innerHTML =
+      '<div class="take-score"><span class="ts-num">' + a.readiness + '</span><span class="ts-lbl">readiness</span></div>' +
+      meterRow('In key', a.inKeyPct) +
+      meterRow('Range coverage', a.coverage,
+        'You sang ' + Pitch.midiToNoteName(a.lowest) + '–' + Pitch.midiToNoteName(a.highest) +
+        (a.hitTop ? ' — top note hit! 🎯' : ' (top note is ' + Pitch.midiToNoteName(SONG.range.high + offset) + ')')) +
+      meterRow('Pitch steadiness', a.stability) +
+      '<p style="margin-top:10px;">' + Songs.takeFeedback(a, SONG, offset) + '</p>' +
+      '<p class="muted">The audio was saved in the Studio tab — listen back!</p>';
+  }
+
+  function renderTakeHistory() {
+    var s = store.song(SONG.id);
+    var box = $('#take-history');
+    if (!s.takes.length) { box.innerHTML = ''; return; }
+    var recent = s.takes.slice(-8);
+    box.innerHTML = '<p class="muted" style="margin-top:14px;">Best readiness: <strong>' + s.best +
+      '</strong> · ' + s.takes.length + ' take' + (s.takes.length === 1 ? '' : 's') + ' — recent: ' +
+      recent.map(function (t) { return t.readiness; }).join(', ') + '</p>';
   }
 
   /* ---------------------------------------------------------------- */
@@ -2497,6 +3019,7 @@ h2 { font-size: 1.25rem; margin: 14px 0 6px; }
   renderLessons();
   renderCatalog();
   renderRangeIntro();
+  renderSong();
   setMicUi();
   switchTab('learn');
 

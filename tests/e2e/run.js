@@ -82,7 +82,7 @@ async function main() {
       await page.locator('#lesson-list .lesson:first-child').evaluate(n => n.classList.contains('open') && n.classList.contains('read')));
 
     /* ---- tab switching ---- */
-    for (const tab of ['tuner', 'train', 'range', 'game', 'studio', 'progress', 'learn']) {
+    for (const tab of ['tuner', 'train', 'range', 'song', 'game', 'studio', 'progress', 'learn']) {
       await page.click(`.tab-btn[data-tab="${tab}"]`);
       const visible = await page.locator(`#view-${tab}`).evaluate(n => n.classList.contains('active'));
       check(`tab "${tab}" activates`, visible);
@@ -124,6 +124,39 @@ async function main() {
     check('quitting returns to catalog',
       await page.locator('#exercise-list').evaluate(n => n.style.display !== 'none'));
 
+    /* ---- Song trainer (Breakeven) ---- */
+    await page.click('.tab-btn[data-tab="song"]');
+    const profileTxt = await page.locator('#song-profile').textContent();
+    check('song profile shows Breakeven facts',
+      profileTxt.includes('Breakeven') && profileTxt.includes('The Script') && profileTxt.includes('Practice key'),
+      profileTxt.slice(0, 120));
+    const guideCount = await page.locator('#song-guide p').count();
+    check('song guide renders coaching sections', guideCount >= 3, `got ${guideCount}`);
+
+    // Key controls adjust the practice key and persist.
+    const keyBefore = await page.locator('#song-profile').textContent();
+    await page.click('#song-key-down');
+    const keyAfter = await page.locator('#song-profile').textContent();
+    check('lower-key button changes the practice key', keyBefore !== keyAfter);
+    await page.click('#song-key-reset');
+
+    // Drill launches the exercise runner in the Train tab.
+    await page.click('#drill-sustains');
+    await page.waitForSelector('#exercise-runner .run-stage', { timeout: 8000 });
+    const drillTitle = await page.locator('#exercise-runner h3').textContent();
+    check('song drill starts in the runner', drillTitle.includes('Top-Note Sustains'), drillTitle);
+    await page.click('#run-quit');
+
+    // Take analyser: record a short take against the fake mic.
+    await page.click('.tab-btn[data-tab="song"]');
+    await page.click('#take-toggle');
+    await page.waitForFunction(() => document.querySelector('#take-toggle').classList.contains('recording'), null, { timeout: 5000 });
+    check('take recording starts', true);
+    await page.waitForTimeout(2500);
+    await page.click('#take-toggle');
+    await page.waitForFunction(() => document.querySelector('#take-result').textContent.trim().length > 0, null, { timeout: 8000 });
+    check('take analysis renders a result', true);
+
     /* ---- Pitch Flyer game ---- */
     await page.click('.tab-btn[data-tab="game"]');
     await page.click('#game-play');
@@ -163,7 +196,7 @@ async function main() {
       total: document.querySelectorAll('#badge-grid .badge').length,
       unlocked: document.querySelectorAll('#badge-grid .badge.unlocked').length
     }));
-    check('badge grid renders all badges', badgeInfo.total === 17, `got ${badgeInfo.total}`);
+    check('badge grid renders all badges', badgeInfo.total === 21, `got ${badgeInfo.total}`);
     check('unlocked badges are highlighted', badgeInfo.unlocked >= 3, `got ${badgeInfo.unlocked}`);
     // clean slate for the progress assertions below
     await page.evaluate(() => window.__singcoach.store.reset());
