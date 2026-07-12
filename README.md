@@ -10,11 +10,12 @@ vocal range, recordings) is stored privately in your own browser.
 
 ## Use it online
 
-Once this repository's Pages deployment is enabled (merge to `main` — the
-included GitHub Actions workflow does the rest automatically), the app is live
-for free at:
+The app is live for free at:
 
 **https://klek17.github.io/claude-sing/**
+
+(Every push to `main` re-tests and re-deploys it automatically via the included
+GitHub Actions workflow.)
 
 Open it on any phone, tablet or computer, click **🎤 Enable microphone**, and
 allow microphone access when the browser asks.
