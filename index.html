@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SingCoach — Learn to Sing</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎤</text></svg>">
+</head>
+<body>
+  <header>
+    <div>
+      <div class="logo">Sing<span>Coach</span></div>
+      <div class="tagline">Your personal singing trainer — mic on, voice out.</div>
+    </div>
+    <button class="mic-toggle">🎤 Enable microphone</button>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" data-tab="learn">📖 Learn</button>
+    <button class="tab-btn" data-tab="tuner">🎯 Tuner</button>
+    <button class="tab-btn" data-tab="train">🏋️ Train</button>
+    <button class="tab-btn" data-tab="range">📏 Range</button>
+    <button class="tab-btn" data-tab="game">🎈 Game</button>
+    <button class="tab-btn" data-tab="studio">⏺ Studio</button>
+    <button class="tab-btn" data-tab="progress">📈 Progress</button>
+  </nav>
+
+  <main>
+    <!-- LEARN -->
+    <section class="view active" id="view-learn">
+      <h2>Start here: singing basics</h2>
+      <p class="intro">Seven short lessons that cover everything a beginner needs. Read one, do its
+        “try it” task, then head to the Train tab to put it into practice.</p>
+      <div id="lesson-list"></div>
+    </section>
+
+    <!-- TUNER -->
+    <section class="view needs-mic" id="view-tuner">
+      <h2>Live tuner</h2>
+      <p class="intro">Sing or hum any note. The tuner names it, shows how sharp or flat you are,
+        and draws your pitch over time. Try holding the needle inside the green zone.</p>
+      <div class="card">
+        <div class="tuner-top">
+          <div id="tuner-note">♪</div>
+          <div>
+            <div id="tuner-freq">microphone off</div>
+            <div id="tuner-cents"></div>
+          </div>
+        </div>
+        <div id="tuner-dial" data-zone="idle"><div id="needle"></div></div>
+        <div class="dial-labels"><span>♭ flat (low)</span><span>in tune</span><span>sharp (high) ♯</span></div>
+        <canvas id="tuner-trace"></canvas>
+        <div class="vol-wrap">
+          <div class="vol-label">Input level — should move clearly when you sing, without going red</div>
+          <div class="vol-meter"><div id="vol-meter-fill"></div></div>
+        </div>
+        <button class="btn primary mic-toggle mic-hint">🎤 Enable microphone</button>
+      </div>
+    </section>
+
+    <!-- TRAIN -->
+    <section class="view" id="view-train">
+      <h2>Guided exercises</h2>
+      <p class="intro">Each exercise plays reference notes and listens to you sing them back,
+        scoring every note out of 100. Start with the warm-up.</p>
+      <p class="card" id="train-range-note" style="border-color: rgba(251,191,36,0.4);">💡 Tip: do the
+        30-second test in the <strong>Range</strong> tab first, so exercises match your voice exactly.</p>
+      <div id="exercise-list"></div>
+      <div id="exercise-runner" style="display:none;"></div>
+    </section>
+
+    <!-- RANGE -->
+    <section class="view" id="view-range">
+      <h2>Vocal range test</h2>
+      <p class="intro">Sing your lowest comfortable note, then your highest. SingCoach uses the result
+        to personalise every exercise to your voice.</p>
+      <div class="card">
+        <p id="range-current"></p>
+        <div id="range-stage"></div>
+        <div class="row"><button class="btn primary" id="range-start">Start range test</button></div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section class="view" id="view-game">
+      <h2>Pitch Flyer 🎈</h2>
+      <p class="intro">Steer the balloon with your voice — sing higher to float up, lower to sink,
+        and fly through the gaps. Sneaky pitch-control training disguised as an arcade game.</p>
+      <div class="card">
+        <canvas id="game-canvas"></canvas>
+        <div class="row">
+          <button class="btn primary" id="game-play">▶ Play</button>
+          <span class="muted" id="game-best-label"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDIO -->
+    <section class="view" id="view-studio">
+      <h2>Recording studio</h2>
+      <p class="intro">Record yourself singing, listen back, and download your takes. Recordings are
+        stored privately in your browser.</p>
+      <div class="card rec-controls">
+        <button class="btn primary" id="rec-toggle">⏺ Start recording</button>
+        <span id="rec-timer">0:00</span>
+      </div>
+      <div id="recording-list"></div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="view" id="view-progress">
+      <h2>Your progress</h2>
+      <div class="card">
+        <div class="stat-row">
+          <div class="stat"><div class="num" id="prog-streak">0 days</div><div class="lbl">practice streak</div></div>
+          <div class="stat"><div class="num" id="prog-total">0</div><div class="lbl">exercises completed</div></div>
+          <div class="stat"><div class="num" id="prog-range">not set</div><div class="lbl">vocal range</div></div>
+        </div>
+        <canvas id="prog-chart"></canvas>
+      </div>
+      <div class="card">
+        <h3 class="card-title">🏆 Achievements</h3>
+        <div id="badge-grid"></div>
+      </div>
+      <div class="card">
+        <table id="prog-table"></table>
+      </div>
+      <div class="row"><button class="btn ghost small danger" id="prog-reset">Reset progress</button></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/pitch.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/exercises.js"></script>
+  <script src="js/lessons.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/achievements.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/recorder.js"></script>
+  <script src="js/trainer.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

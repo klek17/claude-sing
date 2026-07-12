@@ -1,0 +1,16 @@
+{
+  "name": "singcoach",
+  "version": "1.0.0",
+  "description": "SingCoach — learn to sing with real-time microphone feedback, guided exercises and a recording studio.",
+  "private": true,
+  "scripts": {
+    "start": "node tools/serve.js",
+    "build": "node tools/build-single.js",
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "node tests/e2e/run.js",
+    "test:all": "npm test && npm run test:e2e"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
